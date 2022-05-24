@@ -14,5 +14,15 @@ module.exports = {
   rules: {
     "no-console": process.env.NODE_ENV === "production" ? "warn" : "off",
     "no-debugger": process.env.NODE_ENV === "production" ? "warn" : "off",
+    "no-case-declarations": "off",
+    "max-len": [
+      "warn",
+      {
+        code: 120,
+        ignoreComments: true,
+        ignoreTrailingComments: true,
+        ignoreTemplateLiterals: true,
+      },
+    ],
   },
 };
