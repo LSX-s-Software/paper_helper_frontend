@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <img :src="require('@img/bg/' + bgIndex + '.jpg')" alt="" id="bg" />
+    <img :src="`/img/bg/${bgIndex}.jpg`" alt="" id="bg" />
     <div class="title-container">
       <h1><i>PaperHelper</i></h1>
       <h2>文献助手</h2>
