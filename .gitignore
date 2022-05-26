@@ -21,3 +21,7 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# unplugin
+auto-imports.d.ts
+components.d.ts
