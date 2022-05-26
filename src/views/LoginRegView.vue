@@ -10,25 +10,25 @@
       <h2>{{ reg ? "注册" : "登录" }}</h2>
       <el-form class="login-form" :model="userInfo" label-width="80px" label-position="top">
         <el-form-item>
-          <el-input v-model="userInfo.username" placeholder="用户名" maxlenth="20"></el-input>
+          <el-input v-model="userInfo.username" placeholder="用户名" maxlenth="20">
+            <template #prefix
+              ><el-icon class="el-input__icon"><i-ep-user /></el-icon
+            ></template>
+          </el-input>
         </el-form-item>
         <el-form-item>
-          <el-input
-            v-model="userInfo.password"
-            type="password"
-            placeholder="密码"
-            show-password
-            maxlenth="30"
-          ></el-input>
+          <el-input v-model="userInfo.password" type="password" placeholder="密码" show-password maxlenth="30">
+            <template #prefix
+              ><el-icon class="el-input__icon"><i-ep-lock /></el-icon
+            ></template>
+          </el-input>
         </el-form-item>
         <el-form-item v-if="reg">
-          <el-input
-            v-model="userInfo.password2"
-            type="password"
-            placeholder="确认密码"
-            show-password
-            maxlenth="30"
-          ></el-input>
+          <el-input v-model="userInfo.password2" type="password" placeholder="确认密码" show-password maxlenth="30">
+            <template #prefix
+              ><el-icon class="el-input__icon"><i-ep-lock /></el-icon
+            ></template>
+          </el-input>
         </el-form-item>
         <div class="switch">
           <span>还没有账号？</span>
@@ -41,9 +41,6 @@
 </template>
 
 <script setup>
-import { reactive, ref } from "vue";
-import { useRouter } from "vue-router";
-
 const router = useRouter();
 
 const userInfo = reactive({
