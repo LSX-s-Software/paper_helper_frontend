@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "vite",
     "serve": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "lint": "eslint src/**/*.{js,vue} --fix",
+    "format": "prettier --write 'src/**/*.{js,vue}'"
   },
   "dependencies": {
     "@vueuse/core": "^8.5.0",
