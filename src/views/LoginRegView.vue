@@ -16,6 +16,13 @@
             ></template>
           </el-input>
         </el-form-item>
+        <el-form-item v-if="reg">
+          <el-input v-model="userInfo.phone" placeholder="手机号" maxlenth="11" type="tel">
+            <template #prefix
+              ><el-icon class="el-input__icon"><i-ep-iphone /></el-icon
+            ></template>
+          </el-input>
+        </el-form-item>
         <el-form-item>
           <el-input v-model="userInfo.password" type="password" placeholder="密码" show-password maxlenth="30">
             <template #prefix
@@ -41,12 +48,15 @@
 </template>
 
 <script setup>
+import { login, register } from "@/api/user";
+
 const router = useRouter();
 
 const userInfo = reactive({
   username: "",
   password: "",
   password2: "",
+  phone: "",
 });
 
 const reg = ref(false);
@@ -59,10 +69,23 @@ const handleAction = () => {
       alert("两次密码不一致");
       return;
     }
-    alert("注册成功");
+    register(userInfo.username, userInfo.password, userInfo.password2, userInfo.phone)
+      .then(() => {
+        alert("注册成功");
+        router.replace("/home");
+      })
+      .catch(err => {
+        alert(err.message);
+      });
   } else {
-    alert("登录成功");
-    router.replace("/home");
+    login(userInfo.username, userInfo.password)
+      .then(() => {
+        alert("登录成功");
+        router.replace("/home");
+      })
+      .catch(err => {
+        alert(err.message);
+      });
   }
 };
 </script>
