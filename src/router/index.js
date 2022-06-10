@@ -8,7 +8,7 @@ const routes = [
     component: LoginRegView,
   },
   {
-    path: "/home",
+    path: "/home/:id",
     name: "home",
     component: () => import(/* webpackChunkName: "home" */ "../views/HomeView.vue"),
   },

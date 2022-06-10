@@ -9,8 +9,11 @@
 }
 
 :root {
+  --theme: #409eff;
+
   --primary-bg: #f5f5f5;
-  --secondary-text: #333;
+  --secondary-text: rgb(44, 36, 36);
+  --separator-color: #e5e5e5;
 }
 
 #app {

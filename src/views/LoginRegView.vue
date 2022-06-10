@@ -71,8 +71,7 @@ const handleAction = () => {
     }
     register(userInfo.username, userInfo.password, userInfo.password2, userInfo.phone)
       .then(() => {
-        alert("注册成功");
-        router.replace("/home");
+        router.replace("/home/");
       })
       .catch(err => {
         alert(err.message);
@@ -80,8 +79,7 @@ const handleAction = () => {
   } else {
     login(userInfo.username, userInfo.password)
       .then(() => {
-        alert("登录成功");
-        router.replace("/home");
+        router.replace("/home/");
       })
       .catch(err => {
         alert(err.message);
