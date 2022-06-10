@@ -10,6 +10,7 @@
 
 :root {
   --theme: #409eff;
+  --theme-transparent: #40a0ff33;
 
   --primary-bg: #f5f5f5;
   --secondary-text: rgb(44, 36, 36);

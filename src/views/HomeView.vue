@@ -15,7 +15,7 @@
     <div class="main-container">
       <div class="left-container">
         <h2>项目</h2>
-        <el-menu default-active="/home/1" class="nav-menu" router>
+        <el-menu class="nav-menu" router>
           <el-menu-item v-for="item in projectList" :key="item.id" :index="`/home/${item.id}`">
             <el-icon><i-ep-document /></el-icon>
             <span>{{ item.name }}</span>
@@ -23,23 +23,50 @@
         </el-menu>
       </div>
       <div class="right-container">
-        <el-table :data="paperList" height="250" stripe class="paper-list">
-          <el-table-column type="selection" width="55" />
-          <el-table-column prop="title" label="名称" />
-          <el-table-column prop="authors" label="作者" />
-          <el-table-column prop="year" label="年份" sortable />
-          <el-table-column prop="publication" label="来源" />
-          <el-table-column prop="createTime" label="添加日期" sortable />
-          <el-table-column prop="read" label="已读" />
-        </el-table>
-        <el-pagination
-          class="pagination"
-          background
-          layout="prev, pager, next"
-          :page-count="pageCount"
-          hide-on-single-page
-          small
-        />
+        <template v-if="currentProject == -1">
+          <div class="placeholder">
+            <h3>欢迎回到PaperHelper<br />从左侧选择一个项目继续工作吧</h3>
+          </div>
+        </template>
+        <template v-else>
+          <div class="header">
+            <h2>{{ projectList[currentProject].name }}</h2>
+            <div class="operations">
+              <el-button @click="addPaper()">
+                <el-icon><i-ep-plus /></el-icon>
+                <span>添加论文</span>
+              </el-button>
+            </div>
+          </div>
+          <el-table :data="paperList" height="250" stripe class="paper-list" row-key="id" @row-click="handleRowClick">
+            <el-table-column type="selection" width="40" />
+            <el-table-column prop="title" label="名称" />
+            <el-table-column prop="authors" label="作者">
+              <template #default="scope">
+                <span class="author-tag" v-for="(author, index) in scope.row.authors" :key="index">
+                  {{ author }}
+                </span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="year" label="年份" width="80" sortable />
+            <el-table-column prop="publication" label="来源" />
+            <el-table-column prop="createTime" label="添加日期" width="120" sortable />
+            <el-table-column prop="read" label="已读" width="60">
+              <template #default="scope">
+                <el-icon v-if="scope.row.read"><i-ep-circleCheckFilled /></el-icon>
+                <span v-else></span>
+              </template>
+            </el-table-column>
+          </el-table>
+          <el-pagination
+            class="pagination"
+            background
+            layout="prev, pager, next"
+            :page-count="pageCount"
+            hide-on-single-page
+            small
+          />
+        </template>
       </div>
     </div>
   </div>
@@ -47,15 +74,18 @@
 
 <script setup>
 import { useDark, useToggle } from "@vueuse/core";
+import { onBeforeRouteUpdate } from "vue-router";
 
 const isDark = useDark();
 const toggleDark = useToggle(isDark);
 
+// 用户信息
 const userInfo = reactive({
   username: "张三",
   avatar: "",
 });
 
+// 项目
 const projectList = ref([
   {
     id: 1,
@@ -70,6 +100,15 @@ const projectList = ref([
     createTime: "2020-01-01",
   },
 ]);
+// 处理项目变化
+const currentProject = ref(-1);
+onBeforeRouteUpdate(to => {
+  if (to.params.projectId == "dashboard") {
+    currentProject.value = -1;
+  } else {
+    currentProject.value = projectList.value.findIndex(item => item.id == to.params.projectId);
+  }
+});
 
 const paperList = ref([
   {
@@ -77,7 +116,7 @@ const paperList = ref([
     title: "论文一",
     abstract: "论文一摘要",
     keywords: "论文一关键词",
-    authors: "论文一作者",
+    authors: ["作者1", "作者2"],
     publication: "刊物1",
     volume: "论文一卷",
     pages: "20",
@@ -92,7 +131,7 @@ const paperList = ref([
     title: "论文二",
     abstract: "论文二摘要",
     keywords: "论文二关键词",
-    authors: "论文二作者",
+    authors: ["作者1", "作者2"],
     publication: "刊物2",
     volume: "论文二卷",
     pages: "10",
@@ -104,7 +143,19 @@ const paperList = ref([
   },
 ]);
 
+// 分页
 const pageCount = ref(10);
+// const currentPage = ref(0);
+
+// 行点击事件
+const handleRowClick = row => {
+  console.log(row);
+};
+
+// 添加论文
+const addPaper = () => {
+  alert("addPaper");
+};
 </script>
 
 <style lang="less" scoped>
@@ -183,11 +234,40 @@ const pageCount = ref(10);
       }
     }
 
+    .placeholder {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--secondary-text);
+      font-size: 20px;
+
+      h3 {
+        width: 100%;
+        font-weight: normal;
+        display: block;
+      }
+    }
+
     .right-container {
       flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 8px 20px;
+
+        h2 {
+          font-size: 24px;
+          font-weight: normal;
+        }
+      }
 
       .paper-list {
         flex: 1;
@@ -197,6 +277,16 @@ const pageCount = ref(10);
 
       .pagination {
         margin: 12px 0;
+      }
+
+      .author-tag {
+        display: inline-block;
+        padding: 1px 4px;
+        border-radius: 5px;
+        background-color: var(--theme-transparent);
+        border: 0.5px solid var(--theme);
+        color: var(--theme);
+        margin-right: 4px;
       }
     }
   }

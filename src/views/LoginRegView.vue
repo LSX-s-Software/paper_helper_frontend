@@ -71,7 +71,7 @@ const handleAction = () => {
     }
     register(userInfo.username, userInfo.password, userInfo.password2, userInfo.phone)
       .then(() => {
-        router.replace("/home/");
+        router.replace("/home/dashboard");
       })
       .catch(err => {
         alert(err.message);
@@ -79,7 +79,7 @@ const handleAction = () => {
   } else {
     login(userInfo.username, userInfo.password)
       .then(() => {
-        router.replace("/home/");
+        router.replace("/home/dashboard");
       })
       .catch(err => {
         alert(err.message);
