@@ -5,6 +5,10 @@ import router from "./router";
 import { createPinia } from "pinia";
 const pinia = createPinia();
 
+// element+
+import "element-plus/theme-chalk/dark/css-vars.css";
+import "element-plus/theme-chalk/el-message-box.css";
+
 const app = createApp(App);
 app.use(router);
 app.use(pinia);

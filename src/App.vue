@@ -13,8 +13,25 @@
   --theme-transparent: #40a0ff33;
 
   --primary-bg: #f5f5f5;
+  --primary-text: #000;
   --secondary-text: rgb(44, 36, 36);
-  --separator-color: #e5e5e5;
+  --separator-color: #e6e6e680;
+
+  --material: rgba(245, 245, 245, 0.8);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --theme: #257ed6;
+    --theme-transparent: #40a0ff33;
+
+    --primary-bg: #1f1f1f;
+    --primary-text: rgb(237, 237, 237);
+    --secondary-text: #e4e4e4;
+    --separator-color: #60606080;
+
+    --material: rgba(39, 39, 39, 0.8);
+  }
 }
 
 #app {
@@ -22,7 +39,7 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: #000;
+  color: var(--primary-text);
   width: 100vw;
   height: 100vh;
 

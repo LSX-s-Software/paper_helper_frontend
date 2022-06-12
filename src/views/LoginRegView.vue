@@ -41,14 +41,20 @@
           <span>还没有账号？</span>
           <el-button type="text" @click="reg = !reg">{{ reg ? "登录" : "注册" }}</el-button>
         </div>
-        <el-button type="primary" @click="handleAction" id="action-btn">{{ reg ? "注册" : "登录" }}</el-button>
+        <el-button type="primary" @click="handleAction" id="action-btn" :loading="loading">{{
+          reg ? "注册" : "登录"
+        }}</el-button>
       </el-form>
     </div>
   </div>
 </template>
 
 <script setup>
+import { useDark } from "@vueuse/core";
 import { login, register } from "@/api/user";
+import { ElMessageBox } from "element-plus";
+
+useDark();
 
 const router = useRouter();
 
@@ -63,10 +69,16 @@ const reg = ref(false);
 
 const bgIndex = ref(Math.floor(Math.random() * 3) + 1);
 
+const loading = ref(false);
+
 const handleAction = () => {
+  loading.value = true;
   if (reg.value) {
     if (userInfo.password !== userInfo.password2) {
-      alert("两次密码不一致");
+      ElMessageBox.alert("两次密码不一致", "注册失败", {
+        type: "error",
+      });
+      loading.value = false;
       return;
     }
     register(userInfo.username, userInfo.password, userInfo.password2, userInfo.phone)
@@ -74,7 +86,12 @@ const handleAction = () => {
         router.replace("/home/dashboard");
       })
       .catch(err => {
-        alert(err.message);
+        ElMessageBox.alert(err.message, "注册失败", {
+          type: "error",
+        });
+      })
+      .finally(() => {
+        loading.value = false;
       });
   } else {
     login(userInfo.username, userInfo.password)
@@ -82,7 +99,12 @@ const handleAction = () => {
         router.replace("/home/dashboard");
       })
       .catch(err => {
-        alert(err.message);
+        ElMessageBox.alert(err.message, "登录失败", {
+          type: "error",
+        });
+      })
+      .finally(() => {
+        loading.value = false;
       });
   }
 };
@@ -97,7 +119,7 @@ const handleAction = () => {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    z-index: -1;
+    z-index: 0;
     filter: brightness(0.6);
   }
 
@@ -136,7 +158,7 @@ const handleAction = () => {
     top: 50%;
     transform: translateY(-50%);
     text-align: left;
-    background-color: rgba(245, 245, 245, 0.8);
+    background-color: var(--material);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border-radius: 20px;
