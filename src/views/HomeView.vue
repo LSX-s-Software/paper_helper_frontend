@@ -1,17 +1,28 @@
 <template>
   <div class="container">
-    <header>
+    <div class="header">
       <h1>PaperHelper</h1>
       <div class="right">
-        <div class="user">
-          <el-button @click="toggleDark()">
-            <span class="ml-2">{{ isDark ? "Dark" : "Light" }}</span>
-          </el-button>
-          <img :src="userInfo.avatar" alt="" class="avatar" />
-          <span>{{ userInfo.username }}</span>
-        </div>
+        <el-button circle @click="toggleDark()">
+          <el-icon>
+            <i-ep-sunny v-if="isDark"></i-ep-sunny>
+            <i-ep-moon v-else></i-ep-moon>
+          </el-icon>
+        </el-button>
+        <el-popover :width="192" trigger="hover">
+          <template #reference>
+            <div class="user">
+              <img :src="userInfo.avatar" alt="" class="avatar" />
+              <span>{{ userInfo.username }}</span>
+            </div>
+          </template>
+          <template #default>
+            <el-button>修改信息</el-button>
+            <el-button type="danger" @click="logout">退出登录</el-button>
+          </template>
+        </el-popover>
       </div>
-    </header>
+    </div>
     <div class="main-container">
       <div class="left-container">
         <h2>项目</h2>
@@ -25,22 +36,45 @@
       <div class="right-container">
         <template v-if="currentProject == -1">
           <div class="placeholder">
-            <h3>欢迎回到PaperHelper<br />从左侧选择一个项目继续工作吧</h3>
+            <h3>欢迎回到PaperHelper</h3>
+            <h4>从左侧选择一个项目继续工作吧</h4>
           </div>
         </template>
         <template v-else>
           <div class="header">
             <h2>{{ projectList[currentProject].name }}</h2>
             <div class="operations">
-              <el-button @click="addPaper()">
+              <!-- 删除按钮 -->
+              <el-popconfirm title="确认要删除这些文献吗？此操作不可撤销" @confirm="deletePaper()">
+                <template #reference>
+                  <el-button type="danger" circle v-if="edit">
+                    <el-icon><i-ep-delete /></el-icon>
+                  </el-button>
+                </template>
+              </el-popconfirm>
+              <!-- 编辑按钮 -->
+              <el-button circle @click="edit = !edit" :type="edit ? 'primary' : 'default'">
+                <el-icon>
+                  <i-ep-edit v-if="!edit" />
+                  <i-ep-check v-else />
+                </el-icon>
+              </el-button>
+              <!-- 添加按钮 -->
+              <el-button circle :type="edit ? 'default' : 'primary'" @click="addPaper()">
                 <el-icon><i-ep-plus /></el-icon>
-                <span>添加论文</span>
               </el-button>
             </div>
           </div>
-          <el-table :data="paperList" height="250" stripe class="paper-list" row-key="id" @row-click="handleRowClick">
-            <el-table-column type="selection" width="40" />
-            <el-table-column prop="title" label="名称" />
+          <el-table
+            class="paper-list"
+            :data="paperList"
+            height="250"
+            :stripe="!isDark"
+            row-key="id"
+            @row-click="handleRowClick"
+          >
+            <el-table-column type="selection" width="40" v-if="edit" />
+            <el-table-column prop="title" label="名称" sortable />
             <el-table-column prop="authors" label="作者">
               <template #default="scope">
                 <span class="author-tag" v-for="(author, index) in scope.row.authors" :key="index">
@@ -49,7 +83,7 @@
               </template>
             </el-table-column>
             <el-table-column prop="year" label="年份" width="80" sortable />
-            <el-table-column prop="publication" label="来源" />
+            <el-table-column prop="publication" label="来源" sortable />
             <el-table-column prop="createTime" label="添加日期" width="120" sortable />
             <el-table-column prop="read" label="已读" width="60">
               <template #default="scope">
@@ -58,14 +92,6 @@
               </template>
             </el-table-column>
           </el-table>
-          <el-pagination
-            class="pagination"
-            background
-            layout="prev, pager, next"
-            :page-count="pageCount"
-            hide-on-single-page
-            small
-          />
         </template>
       </div>
     </div>
@@ -75,15 +101,27 @@
 <script setup>
 import { useDark, useToggle } from "@vueuse/core";
 import { onBeforeRouteUpdate } from "vue-router";
+import { ElMessage } from "element-plus";
 
 const isDark = useDark();
 const toggleDark = useToggle(isDark);
+const router = useRouter();
 
 // 用户信息
 const userInfo = reactive({
   username: "张三",
-  avatar: "",
+  avatar: "https://github.com/fluidicon.png",
 });
+const logout = () => {
+  userInfo.username = "";
+  userInfo.avatar = "";
+  localStorage.removeItem("token");
+  router.replace("/");
+  ElMessage({
+    message: "您已成功退出登录",
+    type: "success",
+  });
+};
 
 // 项目
 const projectList = ref([
@@ -101,7 +139,7 @@ const projectList = ref([
   },
 ]);
 // 处理项目变化
-const currentProject = ref(-1);
+const currentProject = useRoute().params.projectId == "dashboard" ? ref(-1) : ref(useRoute().params.projectId);
 onBeforeRouteUpdate(to => {
   if (to.params.projectId == "dashboard") {
     currentProject.value = -1;
@@ -143,10 +181,6 @@ const paperList = ref([
   },
 ]);
 
-// 分页
-const pageCount = ref(10);
-// const currentPage = ref(0);
-
 // 行点击事件
 const handleRowClick = row => {
   console.log(row);
@@ -156,6 +190,12 @@ const handleRowClick = row => {
 const addPaper = () => {
   alert("addPaper");
 };
+
+// 编辑状态
+const edit = ref(false);
+const deletePaper = () => {
+  alert("deletePaper");
+};
 </script>
 
 <style lang="less" scoped>
@@ -164,7 +204,7 @@ const addPaper = () => {
   flex-direction: column;
   overflow: hidden;
 
-  header {
+  & > .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -183,10 +223,15 @@ const addPaper = () => {
     .right {
       display: flex;
       align-items: stretch;
+      justify-content: flex-end;
       height: 100%;
 
-      span {
+      & > * {
         display: block;
+        margin-right: 12px;
+      }
+
+      span {
         white-space: nowrap;
       }
 
@@ -198,11 +243,12 @@ const addPaper = () => {
 
         .avatar {
           display: block;
-          height: 100%;
-          aspect-ratio: 1 / 1;
+          height: 32px;
+          width: 32px;
           background-color: #fff;
           border-radius: 50%;
           margin-right: 8px;
+          object-fit: contain;
         }
       }
     }
@@ -239,13 +285,24 @@ const addPaper = () => {
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-direction: column;
       color: var(--secondary-text);
-      font-size: 20px;
 
-      h3 {
+      h3,
+      h4 {
         width: 100%;
         font-weight: normal;
         display: block;
+      }
+
+      h3 {
+        font-size: 32px;
+        color: var(--primary-text);
+      }
+
+      h4 {
+        font-size: 20px;
+        color: var(--secondary-text);
       }
     }
 

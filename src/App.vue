@@ -27,7 +27,7 @@
 
     --primary-bg: #1f1f1f;
     --primary-text: rgb(237, 237, 237);
-    --secondary-text: #e4e4e4;
+    --secondary-text: #dadadad0;
     --separator-color: #60606080;
 
     --material: rgba(39, 39, 39, 0.8);
