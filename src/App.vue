@@ -42,6 +42,7 @@
   color: var(--primary-text);
   width: 100vw;
   height: 100vh;
+  overflow: hidden;
 
   .dark & {
     color: #ecf0f1;
@@ -53,5 +54,38 @@
   width: 100%;
   height: 100%;
   position: relative;
+}
+</style>
+
+<style>
+.v-enter-active,
+.v-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.v-enter-from,
+.v-leave-to {
+  opacity: 0;
+}
+
+.slide-enter-active,
+.slide-leave-active {
+  transition: all 0.75s ease;
+}
+
+.slide-enter-from {
+  transform: translateX(100%);
+}
+
+.slide-enter-to {
+  transform: translateX(0%);
+}
+
+.slide-leave-from {
+  transform: translateX(0%);
+}
+
+.slide-leave-to {
+  transform: translateX(-100%);
 }
 </style>

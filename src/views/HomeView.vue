@@ -196,7 +196,6 @@ const paperList = ref([
 const table = ref(null);
 // 行点击事件
 const handleRowClick = row => {
-  console.log(row);
   if (edit.value) {
     table.value.toggleRowSelection(row);
   } else {
