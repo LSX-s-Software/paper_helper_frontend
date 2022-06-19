@@ -44,14 +44,6 @@
           <div class="header">
             <h2>{{ projectList[currentProject].name }}</h2>
             <div class="operations">
-              <!-- 删除按钮 -->
-              <el-popconfirm title="确认要删除这些文献吗？此操作不可撤销" @confirm="deletePaper()">
-                <template #reference>
-                  <el-button type="danger" circle v-if="edit">
-                    <el-icon><i-ep-delete /></el-icon>
-                  </el-button>
-                </template>
-              </el-popconfirm>
               <!-- 编辑按钮 -->
               <el-button circle @click="edit = !edit" :type="edit ? 'primary' : 'default'">
                 <el-icon>
@@ -60,18 +52,37 @@
                 </el-icon>
               </el-button>
               <!-- 添加按钮 -->
-              <el-button circle :type="edit ? 'default' : 'primary'" @click="addPaper()">
-                <el-icon><i-ep-plus /></el-icon>
-              </el-button>
+              <el-upload
+                v-if="!edit"
+                accept=".pdf"
+                :show-file-list="false"
+                :on-success="handleFileUploadSuccess"
+                :on-error="handleFileUploadError"
+              >
+                <el-button circle :type="edit ? 'default' : 'primary'">
+                  <el-icon><i-ep-plus /></el-icon>
+                </el-button>
+              </el-upload>
+              <!-- 删除按钮 -->
+              <el-popconfirm title="确认要删除这些文献吗？此操作不可撤销" @confirm="deletePaper()">
+                <template #reference>
+                  <el-button type="danger" circle v-if="edit">
+                    <el-icon><i-ep-delete /></el-icon>
+                  </el-button>
+                </template>
+              </el-popconfirm>
             </div>
           </div>
+          <!-- 表格 -->
           <el-table
             class="paper-list"
+            ref="table"
             :data="paperList"
             height="250"
             :stripe="!isDark"
             row-key="id"
             @row-click="handleRowClick"
+            row-class-name="paper-list-item"
           >
             <el-table-column type="selection" width="40" v-if="edit" />
             <el-table-column prop="title" label="名称" sortable />
@@ -181,20 +192,44 @@ const paperList = ref([
   },
 ]);
 
+// 列表
+const table = ref(null);
 // 行点击事件
 const handleRowClick = row => {
   console.log(row);
+  if (edit.value) {
+    table.value.toggleRowSelection(row);
+  } else {
+    router.push(`/paper/${row.id}`);
+  }
 };
 
 // 添加论文
-const addPaper = () => {
-  alert("addPaper");
+const handleFileUploadSuccess = (res, file) => {
+  console.log(res, file);
+  ElMessage({
+    message: "上传成功",
+    type: "success",
+  });
+};
+const handleFileUploadError = (err, file) => {
+  console.error(err, file);
+  ElMessage({
+    message: `上传失败：${err.message}`,
+    type: "error",
+  });
 };
 
 // 编辑状态
 const edit = ref(false);
+// 删除论文
 const deletePaper = () => {
-  alert("deletePaper");
+  table.value.getSelectionRows().forEach(row => {
+    paperList.value.splice(
+      paperList.value.findIndex(item => item.id == row.id),
+      1
+    );
+  });
 };
 </script>
 
@@ -324,6 +359,16 @@ const deletePaper = () => {
           font-size: 24px;
           font-weight: normal;
         }
+
+        .operations {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+
+          & > * {
+            margin-left: 12px;
+          }
+        }
       }
 
       .paper-list {
@@ -344,6 +389,10 @@ const deletePaper = () => {
         border: 0.5px solid var(--theme);
         color: var(--theme);
         margin-right: 4px;
+      }
+
+      :deep(.paper-list-item) {
+        cursor: pointer;
       }
     }
   }
