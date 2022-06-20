@@ -6,10 +6,23 @@
       </el-button>
       <h1>{{ paper.title }}</h1>
     </div>
-    <div class="main-container">
-      <PDFReader class="reader"></PDFReader>
+    <div
+      class="main-container"
+      @mousedown="handleMouseDown"
+      @mousemove="handleResize"
+      @mouseup="handleResizeComplete"
+      @mouseleave="handleResizeComplete"
+    >
+      <div class="reader">
+        <div class="mask" v-if="mousedown"></div>
+        <PDFReader :style="{ width: leftWidth + 'px' }"></PDFReader>
+      </div>
+      <div class="separator">
+        <div class="handle"></div>
+      </div>
       <div class="right">
-        <el-tabs v-model="activeName" class="tabs" stretch>
+        <div class="mask" v-if="mousedown"></div>
+        <el-tabs class="tabs" stretch>
           <el-tab-pane label="信息">
             <div class="info">
               <div class="info-item">
@@ -66,8 +79,7 @@ const router = useRouter();
 const paper = reactive({
   id: 1,
   title: "论文一",
-  abstract:
-    "Lorem ipsum dolor sit amet, consectetur adipisicing elit.Lorem ipsum dolor sit amet, consectetur adipisicing elit.Lorem ipsum dolor sit amet, consectetur adipisicing elit.Lorem ipsum dolor sit amet, consectetur adipisicing elit.Lorem ipsum dolor sit amet, consectetur adipisicing elit.Lorem ipsum dolor sit amet, consectetur adipisicing elit.Lorem ipsum dolor sit amet, consectetur adipisicing elit.Lorem ipsum dolor sit amet, consectetur adipisicing elit.Lorem ipsum dolor sit amet, consectetur adipisicing elit.",
+  abstract: "Lorem ipsum dolor sit amet, consectetur adipisicing elit.",
   keywords: "论文一关键词",
   authors: ["作者1", "作者2"],
   publication: "刊物1",
@@ -81,6 +93,27 @@ const paper = reactive({
 });
 
 const note = ref("");
+
+const windowWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+const separatorWidth = 14;
+const leftWidth = ref(parseFloat(localStorage.getItem("leftWidth")) || (windowWidth - separatorWidth) * 0.84);
+let mousedown = ref(false);
+const handleMouseDown = e => {
+  if (e.target.className == "handle") {
+    mousedown.value = true;
+  }
+};
+const handleResize = e => {
+  if (mousedown.value) {
+    leftWidth.value = leftWidth.value + e.movementX;
+  }
+};
+const handleResizeComplete = () => {
+  if (mousedown.value) {
+    mousedown.value = false;
+    localStorage.setItem("leftWidth", leftWidth.value);
+  }
+};
 </script>
 
 <style lang="less" scoped>
@@ -114,12 +147,49 @@ const note = ref("");
     overflow: hidden;
 
     .reader {
-      flex: 5;
+      position: relative;
+    }
+
+    .mask {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 100;
+    }
+
+    .separator {
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--separator-color);
+
+      .handle {
+        width: 6px;
+        height: 50px;
+        background-color: #a9a9a9;
+        border-radius: 5px;
+        cursor: col-resize;
+        transition: all 0.15s ease;
+
+        &:active {
+          background-color: #7b7b7b;
+        }
+
+        @media (prefers-color-scheme: dark) {
+          &:active {
+            background-color: #e1e1e1;
+          }
+        }
+      }
     }
 
     .right {
       flex: 1;
       height: 100%;
+      position: relative;
 
       .tabs {
         height: 100%;

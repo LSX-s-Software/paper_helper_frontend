@@ -13,6 +13,7 @@
   --theme-transparent: #40a0ff33;
 
   --primary-bg: #f5f5f5;
+  --secondary-bg: #cccccc;
   --primary-text: #000;
   --secondary-text: rgb(44, 36, 36);
   --separator-color: #e6e6e680;
@@ -26,6 +27,7 @@
     --theme-transparent: #40a0ff33;
 
     --primary-bg: #1f1f1f;
+    --secondary-bg: #2f2f2f;
     --primary-text: rgb(237, 237, 237);
     --secondary-text: #dadadad0;
     --separator-color: #60606080;
