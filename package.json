@@ -16,7 +16,8 @@
     "element-plus": "^2.2.2",
     "pinia": "^2.0.14",
     "vue": "^3.2.13",
-    "vue-router": "^4.0.3"
+    "vue-router": "^4.0.3",
+    "vue3-mindmap": "^0.5.12"
   },
   "devDependencies": {
     "@babel/core": "^7.12.16",

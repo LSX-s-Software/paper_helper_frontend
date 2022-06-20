@@ -22,8 +22,8 @@
       </div>
       <div class="right">
         <div class="mask" v-if="mousedown"></div>
-        <el-tabs class="tabs" stretch>
-          <el-tab-pane label="信息">
+        <el-tabs class="tabs" stretch v-model="tab">
+          <el-tab-pane label="信息" name="info">
             <div class="info">
               <div class="info-item">
                 <span>标题</span>
@@ -58,10 +58,12 @@
               </div>
             </div>
           </el-tab-pane>
-          <el-tab-pane label="笔记">
+          <el-tab-pane label="笔记" name="note" lazy>
             <textarea class="note" v-model="note" placeholder="在这里记录读论文时的想法💡"></textarea>
           </el-tab-pane>
-          <el-tab-pane label="思维导图">思维导图</el-tab-pane>
+          <el-tab-pane label="思维导图" name="mindmap" lazy>
+            <MindMap />
+          </el-tab-pane>
         </el-tabs>
       </div>
     </div>
@@ -71,6 +73,7 @@
 <script setup>
 import { useDark } from "@vueuse/core";
 import PDFReader from "../components/PDFReader.vue";
+import MindMap from "../components/MindMap.vue";
 
 useDark();
 const router = useRouter();
@@ -90,6 +93,11 @@ const paper = reactive({
   day: 1,
   read: false,
   createTime: "2020-01-02",
+});
+
+const tab = ref(localStorage.getItem("tab") || "info");
+watch(tab, val => {
+  localStorage.setItem("tab", val);
 });
 
 const note = ref("");
