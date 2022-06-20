@@ -8,30 +8,37 @@
     </div>
     <div class="login-contianer">
       <h2>{{ reg ? "注册" : "登录" }}</h2>
-      <el-form class="login-form" :model="userInfo" label-width="80px" label-position="top">
-        <el-form-item>
-          <el-input v-model="userInfo.username" placeholder="用户名" maxlenth="20">
+      <el-form
+        class="login-form"
+        :model="userInfo"
+        label-width="80px"
+        label-position="top"
+        :rules="rules"
+        ref="formRef"
+      >
+        <el-form-item prop="username">
+          <el-input v-model="userInfo.username" placeholder="用户名" maxlength="40">
             <template #prefix
               ><el-icon class="el-input__icon"><i-ep-user /></el-icon
             ></template>
           </el-input>
         </el-form-item>
-        <el-form-item v-if="reg">
-          <el-input v-model="userInfo.phone" placeholder="手机号" maxlenth="11" type="tel">
+        <el-form-item prop="phone" v-if="reg">
+          <el-input v-model="userInfo.phone" placeholder="手机号" maxlength="11" type="tel">
             <template #prefix
               ><el-icon class="el-input__icon"><i-ep-iphone /></el-icon
             ></template>
           </el-input>
         </el-form-item>
-        <el-form-item>
-          <el-input v-model="userInfo.password" type="password" placeholder="密码" show-password maxlenth="30">
+        <el-form-item prop="password">
+          <el-input v-model="userInfo.password" type="password" placeholder="密码" show-password maxlength="40">
             <template #prefix
               ><el-icon class="el-input__icon"><i-ep-lock /></el-icon
             ></template>
           </el-input>
         </el-form-item>
-        <el-form-item v-if="reg">
-          <el-input v-model="userInfo.password2" type="password" placeholder="确认密码" show-password maxlenth="30">
+        <el-form-item v-if="reg" prop="password2">
+          <el-input v-model="userInfo.password2" type="password" placeholder="确认密码" show-password maxlength="40">
             <template #prefix
               ><el-icon class="el-input__icon"><i-ep-lock /></el-icon
             ></template>
@@ -51,12 +58,18 @@
 
 <script setup>
 import { useDark } from "@vueuse/core";
-import { login, register } from "@/api/user";
+import { login, register, checkUsername, checkToken } from "@/api/user";
 import { ElMessageBox } from "element-plus";
 
 useDark();
 
 const router = useRouter();
+
+checkToken(localStorage.getItem("token"))
+  .then(() => {
+    router.replace("/home/dashboard");
+  })
+  .catch(() => {});
 
 const userInfo = reactive({
   username: "",
@@ -71,28 +84,80 @@ const bgIndex = ref(Math.floor(Math.random() * 3) + 1);
 
 const loading = ref(false);
 
+const formRef = ref(null);
+const validateUsername = (rule, value, callback) => {
+  if (reg.value && value != "") {
+    checkUsername(value)
+      .then(() => callback())
+      .catch(() => {
+        callback(new Error("用户名已存在"));
+      });
+  }
+};
+const validatePass = (rule, value, callback) => {
+  if (value === "") {
+    callback(new Error("请输入密码"));
+  } else {
+    if (userInfo.password2 !== "") {
+      if (!formRef.value) return;
+      formRef.value.validateField("password2", () => null);
+    }
+    callback();
+  }
+};
+const validatePass2 = (rule, value, callback) => {
+  if (value === "") {
+    callback(new Error("请再次输入密码"));
+  } else if (value !== userInfo.password) {
+    callback(new Error("两次输入的密码不一致"));
+  } else {
+    callback();
+  }
+};
+const validatePhone = (rule, value, callback) => {
+  if (value === "") {
+    callback(new Error("请输入手机号"));
+  } else {
+    if (value !== "") {
+      if (value.length != 11) {
+        callback(new Error("手机号不正确"));
+      }
+    }
+    callback();
+  }
+};
+const rules = reactive({
+  username: [{ validator: validateUsername, trigger: "blur" }],
+  password: [{ validator: validatePass, trigger: "blur" }],
+  password2: [{ validator: validatePass2, trigger: "blur" }],
+  phone: [{ validator: validatePhone, trigger: "blur" }],
+});
+
 const handleAction = () => {
   loading.value = true;
   if (reg.value) {
-    if (userInfo.password !== userInfo.password2) {
-      ElMessageBox.alert("两次密码不一致", "注册失败", {
-        type: "error",
-      });
-      loading.value = false;
-      return;
-    }
-    register(userInfo.username, userInfo.password, userInfo.password2, userInfo.phone)
-      .then(() => {
-        router.replace("/home/dashboard");
-      })
-      .catch(err => {
-        ElMessageBox.alert(err.message, "注册失败", {
+    formRef.value.validate(valid => {
+      if (valid) {
+        register(userInfo.username, userInfo.password, userInfo.password2, userInfo.phone)
+          .then(() => {
+            router.replace("/home/dashboard");
+          })
+          .catch(err => {
+            ElMessageBox.alert(err.message, "注册失败", {
+              type: "error",
+            });
+          })
+          .finally(() => {
+            loading.value = false;
+          });
+      } else {
+        ElMessageBox.alert("信息未填写完整", "注册失败", {
           type: "error",
         });
-      })
-      .finally(() => {
         loading.value = false;
-      });
+        return false;
+      }
+    });
   } else {
     login(userInfo.username, userInfo.password)
       .then(() => {
@@ -171,7 +236,6 @@ const handleAction = () => {
     }
 
     .el-form-item {
-      margin-bottom: 12px;
       width: 225px;
     }
 

@@ -59,3 +59,70 @@ export function register(username, password, confirmPassword, phone) {
       });
   });
 }
+
+/**
+ * 检查用户名是否合法
+ * @param {String} username 用户名
+ * @returns {Promise} 检查用户名是否合法Promise
+ */
+export function checkUsername(username) {
+  return new Promise((resolve, reject) => {
+    http
+      .get(`/tokens/count/${username}`, {
+        headers: {
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      })
+      .then(res => {
+        if (res.data.count === 0) {
+          resolve();
+        } else {
+          reject();
+        }
+      })
+      .catch(reject);
+  });
+}
+
+/**
+ * 登出
+ */
+export function logout() {
+  localStorage.removeItem("token");
+}
+
+/**
+ * 校验token是否有效
+ * @param {String} token token
+ * @returns 校验结果Promise
+ */
+export function checkToken(token) {
+  return new Promise((resolve, reject) => {
+    if (token == "" || token == null) {
+      reject();
+      return;
+    }
+    http
+      .get("/test/user", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      })
+      .then(res => {
+        if (res.data.message == "login success") {
+          resolve();
+        } else {
+          throw { message: res.data.message };
+        }
+      })
+      .catch(err => {
+        reject(err);
+        logout();
+      });
+  });
+}

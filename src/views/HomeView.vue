@@ -18,7 +18,7 @@
           </template>
           <template #default>
             <el-button>修改信息</el-button>
-            <el-button type="danger" @click="logout">退出登录</el-button>
+            <el-button type="danger" @click="handleLogout">退出登录</el-button>
           </template>
         </el-popover>
       </div>
@@ -113,6 +113,7 @@
 import { useDark, useToggle } from "@vueuse/core";
 import { onBeforeRouteUpdate } from "vue-router";
 import { ElMessage } from "element-plus";
+import { logout } from "@/api/user";
 
 const isDark = useDark();
 const toggleDark = useToggle(isDark);
@@ -123,10 +124,10 @@ const userInfo = reactive({
   username: "张三",
   avatar: "https://github.com/fluidicon.png",
 });
-const logout = () => {
+const handleLogout = () => {
+  logout();
   userInfo.username = "";
   userInfo.avatar = "";
-  localStorage.removeItem("token");
   router.replace("/");
   ElMessage({
     message: "您已成功退出登录",

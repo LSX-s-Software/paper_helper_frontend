@@ -1,12 +1,12 @@
 import axios from "axios";
 
 export const http = axios.create({
-  baseURL: "https://localhost:7048/api",
+  baseURL: "https://api.paperhelper.nagico.cn/",
   withCredentials: true,
 });
 
 http.interceptors.request.use(config => {
-  if (config.url == "/tokens/login" || config.url == "/tokens/register") {
+  if (config.url == "/tokens/login" || config.url == "/tokens/register" || config.url.startsWith("/tokens/count/")) {
     // 注册和登录不需要携带token
     return config;
   }
