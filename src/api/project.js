@@ -61,13 +61,46 @@ export function joinProject(invitationCode) {
   });
 }
 
-// export function getPaperList(projectId) {
-//   return new Promise((resolve, reject) => {
-//     http
-//       .get(`/projects/${projectId}/papers`)
-//       .then(res => {
-//         resolve(res.data);
-//       })
-//       .catch(err => reject(err));
-//   });
-// }
+/**
+ * 删除项目
+ * @param {String} projectId 项目id
+ * @returns 删除结果Promise
+ */
+export function deleteProject(projectId) {
+  return new Promise((resolve, reject) => {
+    http
+      .delete(`/projects/${projectId}`)
+      .then(() => {
+        resolve();
+      })
+      .catch(err => reject(err.response ? err.response.data.detail : err.message));
+  });
+}
+
+/**
+ * 退出项目
+ * @param {String} projectId 项目id
+ * @returns 退出结果Promise
+ */
+export function leaveProject(projectId) {
+  return new Promise((resolve, reject) => {
+    const user = useUserStore();
+    http
+      .delete(`/projects/${projectId}/members/${user.id}`)
+      .then(() => {
+        resolve();
+      })
+      .catch(err => reject(err.response ? err.response.data.detail : err.message));
+  });
+}
+
+export function editProject(projectId, key, value) {
+  return new Promise((resolve, reject) => {
+    http
+      .put(`/projects/${projectId}`, { [key]: value })
+      .then(res => {
+        resolve(res.data);
+      })
+      .catch(err => reject(err.response ? err.response.data.detail : err.message));
+  });
+}

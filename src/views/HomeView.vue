@@ -61,6 +61,10 @@
               <span class="desc">{{ currentProject.description }}</span>
             </div>
             <div class="operations">
+              <!-- 项目信息按钮 -->
+              <el-button circle @click="showProjectDetail">
+                <el-icon><i-ep-setting /></el-icon>
+              </el-button>
               <!-- 编辑按钮 -->
               <el-button circle @click="edit = !edit" :type="edit ? 'primary' : 'default'" v-if="paperList.length > 0">
                 <el-icon>
@@ -125,6 +129,77 @@
       </div>
     </div>
   </div>
+  <!-- 项目信息抽屉 -->
+  <el-drawer v-model="showProjectInfoDrawer">
+    <template #title>
+      <h4 style="font-weight: 500; text-align: left">项目信息</h4>
+    </template>
+    <template #default>
+      <div>
+        <el-descriptions :column="1">
+          <el-descriptions-item label="项目名">
+            {{ currentProject.name }}
+            <el-button text circle @click="handleEditProject(currentProjectId, 'name')">
+              <el-icon><i-ep-edit /></el-icon>
+            </el-button>
+          </el-descriptions-item>
+          <el-descriptions-item label="项目描述">
+            {{ currentProject.description }}
+            <el-button text circle @click="handleEditProject(currentProjectId, 'description')">
+              <el-icon><i-ep-edit /></el-icon>
+            </el-button>
+          </el-descriptions-item>
+          <el-descriptions-item label="邀请码">
+            <span @click="copyInvitation">{{ currentProject.invitation_code }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="创建时间">{{ currentProject.create_time }}</el-descriptions-item>
+          <el-descriptions-item label="更新时间">{{ currentProject.update_time }}</el-descriptions-item>
+          <el-descriptions-item label="创建者">
+            {{ currentProject.members.find(m => m.is_owner).username }}
+          </el-descriptions-item>
+          <el-descriptions-item label="项目成员" class-name="avatar-list">
+            <el-tooltip
+              v-for="member in currentProject.members"
+              :key="member.id"
+              class="box-item"
+              :content="member.username"
+              placement="bottom"
+            >
+              <el-avatar :size="36" :src="member.avatar" />
+            </el-tooltip>
+          </el-descriptions-item>
+        </el-descriptions>
+      </div>
+    </template>
+    <template #footer>
+      <div>
+        <el-popconfirm
+          v-if="isOwner"
+          title="确认删除这个项目吗？此操作不能撤销"
+          confirm-button-type="danger"
+          confirm-button-text="删除"
+          cancel-button-text="取消"
+          @confirm="handleDeleteProject(currentProjectId)"
+        >
+          <template #reference>
+            <el-button type="danger">删除项目</el-button>
+          </template>
+        </el-popconfirm>
+        <el-popconfirm
+          v-if="!isOwner"
+          title="确认退出这个项目吗？退出后可以通过邀请码重新加入项目"
+          confirm-button-type="danger"
+          confirm-button-text="退出"
+          cancel-button-text="取消"
+          @confirm="handleLeaveProject(currentProject.id)"
+        >
+          <template #reference>
+            <el-button type="danger">退出项目</el-button>
+          </template>
+        </el-popconfirm>
+      </div>
+    </template>
+  </el-drawer>
 </template>
 
 <script setup>
@@ -133,7 +208,16 @@ import { onBeforeRouteUpdate } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { fetchUserInfo, logout } from "@/api/user";
 import { useUserStore } from "@/store";
-import { getProjectList, getProjectInfo, createProject, joinProject } from "@/api/project";
+import {
+  getProjectList,
+  getProjectInfo,
+  createProject,
+  editProject,
+  deleteProject,
+  joinProject,
+  leaveProject,
+} from "@/api/project";
+import { formatTime } from "@/utils/util";
 
 const isDark = useDark();
 const router = useRouter();
@@ -152,8 +236,8 @@ const userInfo = ref(
 
 const handleLogout = () => {
   logout();
-  userInfo.username = "";
-  userInfo.avatar = "";
+  userInfo.value.username = "";
+  userInfo.value.avatar = "";
   router.replace("/");
   ElMessage({
     message: "您已成功退出登录",
@@ -173,6 +257,9 @@ const loadProjectInfo = projectId => {
   paperListLoading.value = true;
   getProjectInfo(projectId)
     .then(data => {
+      data.create_time = formatTime(data.create_time);
+      data.update_time = formatTime(data.update_time);
+      isOwner.value = data.members.find(m => m.id == userInfo.value.id).is_owner;
       currentProject.value = data;
       paperList.value = data.list || [];
     })
@@ -185,13 +272,111 @@ const loadProjectInfo = projectId => {
     .finally(() => (paperListLoading.value = false));
 };
 
+// 显示项目详情
+const showProjectInfoDrawer = ref(false);
+
+const showProjectDetail = () => {
+  showProjectInfoDrawer.value = true;
+};
+
+// 复制邀请码
+const copyInvitation = () => {
+  navigator.clipboard
+    .writeText(currentProject.value.id)
+    .then(() => {
+      ElMessage({
+        message: "邀请码已复制到剪贴板",
+        type: "success",
+      });
+    })
+    .catch(err => {
+      console.error(err);
+      ElMessage({
+        message: "邀请码复制失败",
+        type: "error",
+      });
+    });
+};
+
+// 编辑项目
+const handleEditProject = (projectId, key) => {
+  let friendlyName, regExp, errMsg;
+  switch (key) {
+    case "name":
+      friendlyName = "名称";
+      regExp = /\s*\S+?/;
+      errMsg = "项目名称不能为空";
+      break;
+    case "description":
+      friendlyName = "描述";
+      regExp = /\s*\S+?/;
+      errMsg = "项目描述不能为空";
+      break;
+    default:
+      break;
+  }
+  ElMessageBox.prompt("请输入项目" + friendlyName, "编辑项目", {
+    confirmButtonText: "确定",
+    cancelButtonText: "取消",
+    inputPattern: regExp,
+    inputErrorMessage: errMsg,
+    inputValue: currentProject.value[key],
+  }).then(({ value }) => {
+    editProject(projectId, key, value)
+      .then(() => {
+        ElMessage({
+          message: `项目${friendlyName}修改成功`,
+          type: "success",
+        });
+        currentProject.value[key] = value;
+      })
+      .catch(err => {
+        ElMessageBox.alert(err, `项目${friendlyName}修改失败`, {
+          confirmButtonText: "确定",
+          type: "error",
+        });
+      });
+  });
+};
+
+// 删除项目
+const isOwner = ref(false);
+const handleDeleteProject = projectId => {
+  if (!isOwner) {
+    ElMessageBox.alert("您不是项目创建者，无法删除项目", "提示", {
+      confirmButtonText: "确定",
+      type: "error",
+    });
+  } else {
+    deleteProject(projectId)
+      .then(() => {
+        ElMessage({
+          message: "项目已删除",
+          type: "success",
+        });
+        showProjectInfoDrawer.value = false;
+        projectList.value.splice(
+          projectList.value.findIndex(p => p.id == projectId),
+          1
+        );
+        router.replace("/home/dashboard");
+      })
+      .catch(err => {
+        ElMessageBox.alert(err, "删除项目失败", {
+          confirmButtonText: "确定",
+          type: "error",
+        });
+      });
+  }
+};
+
 // 处理项目变化
 onBeforeRouteUpdate(to => {
   if (to.params.projectId == "dashboard") {
     currentProjectId.value = -1;
   } else {
     let projectId = to.params.projectId;
-    currentProjectId.value = projectList.value.findIndex(item => item.id == projectId);
+    currentProjectId.value = projectId;
     loadProjectInfo(projectId);
   }
 });
@@ -252,6 +437,7 @@ const handleJoinProject = () => {
             type: "success",
             message: `您已成功加入项目${data.name}`,
           });
+          projectList.value.push(data);
           router.push(`/home/${data.id}`);
         })
         .catch(err => {
@@ -264,6 +450,29 @@ const handleJoinProject = () => {
     .catch(() => {})
     .finally(() => {
       joiningProject = false;
+    });
+};
+
+// 退出项目
+const handleLeaveProject = projectId => {
+  leaveProject(projectId)
+    .then(() => {
+      ElMessage({
+        type: "success",
+        message: "您已成功退出项目",
+      });
+      projectList.value.splice(
+        projectList.value.findIndex(p => p.id == projectId),
+        1
+      );
+      showProjectInfoDrawer.value = false;
+      router.replace("/home/dashboard");
+    })
+    .catch(err => {
+      ElMessageBox.alert(err, "退出项目失败", {
+        confirmButtonText: "确定",
+        type: "error",
+      });
     });
 };
 
@@ -543,5 +752,13 @@ onMounted(async () => {
       }
     }
   }
+}
+
+:deep(.avatar-list) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+  margin-left: 8px;
 }
 </style>
