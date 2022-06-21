@@ -13,7 +13,7 @@ export function getProjectList() {
       .then(res => {
         resolve(res.data);
       })
-      .catch(err => reject(err.response ? err.response.data.message : err.message));
+      .catch(err => reject(err.response ? err.response.data.detail : err.message));
   });
 }
 
@@ -29,7 +29,35 @@ export function getProjectInfo(projectId) {
       .then(res => {
         resolve(res.data);
       })
-      .catch(err => reject(err.response ? err.response.data.message : err.message));
+      .catch(err => reject(err.response ? err.response.data.detail : err.message));
+  });
+}
+
+export function createProject(name) {
+  return new Promise((resolve, reject) => {
+    http
+      .post("/projects", { name })
+      .then(res => {
+        resolve(res.data);
+      })
+      .catch(err => reject(err.response ? err.response.data.detail : err.message));
+  });
+}
+
+/**
+ * 加入项目
+ * @param {String} invitationCode 邀请码
+ * @returns 加入结果Promise
+ */
+export function joinProject(invitationCode) {
+  return new Promise((resolve, reject) => {
+    const user = useUserStore();
+    http
+      .post(`/users/${user.id}/projects`, { invitation_code: invitationCode })
+      .then(res => {
+        resolve(res.data);
+      })
+      .catch(err => reject(err.response ? err.response.data.detail : err.message));
   });
 }
 

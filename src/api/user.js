@@ -124,7 +124,7 @@ export function checkToken(token) {
         }
       })
       .catch(err => {
-        reject(err.response ? err.response.data.message : err.message);
+        reject(err.response ? err.response.data.detail : err.message);
         logout();
       });
   });
@@ -141,7 +141,7 @@ export function fetchUserInfo() {
         resolve(res.data);
       })
       .catch(err => {
-        reject(err.response ? err.response.data.message : err.message);
+        reject(err.response ? err.response.data.detail : err.message);
       });
   });
 }

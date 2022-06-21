@@ -29,18 +29,18 @@
             </template>
             <template #default>
               <div>
-                <el-button type="primary" @click="createProject">新建项目</el-button>
-                <el-button>加入项目</el-button>
+                <el-button type="primary" @click="handleCreateProject">新建项目</el-button>
+                <el-button @click="handleJoinProject">加入项目</el-button>
               </div>
             </template>
           </el-popover>
         </div>
         <div class="placeholder" v-if="!projectListLoading && projectList.length == 0">
           <span>目前没有项目</span>
-          <el-button type="primary" @click="createProject">新建项目</el-button>
-          <el-button>加入项目</el-button>
+          <el-button type="primary" @click="handleCreateProject">新建项目</el-button>
+          <el-button @click="handleJoinProject">加入项目</el-button>
         </div>
-        <el-menu class="nav-menu" router v-loading="projectListLoading">
+        <el-menu class="nav-menu" router v-loading="projectListLoading" :default-active="route.path">
           <el-menu-item v-for="item in projectList" :key="item.id" :index="`/home/${item.id}`">
             <el-icon><i-ep-document /></el-icon>
             <span>{{ item.name }}</span>
@@ -56,7 +56,10 @@
         </template>
         <template v-else>
           <div class="header">
-            <h2>{{ currentProject.name }}</h2>
+            <div class="left">
+              <h2 class="name">{{ currentProject.name }}</h2>
+              <span class="desc">{{ currentProject.description }}</span>
+            </div>
             <div class="operations">
               <!-- 编辑按钮 -->
               <el-button circle @click="edit = !edit" :type="edit ? 'primary' : 'default'" v-if="paperList.length > 0">
@@ -130,7 +133,7 @@ import { onBeforeRouteUpdate } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { fetchUserInfo, logout } from "@/api/user";
 import { useUserStore } from "@/store";
-import { getProjectList, getProjectInfo } from "@/api/project";
+import { getProjectList, getProjectInfo, createProject, joinProject } from "@/api/project";
 
 const isDark = useDark();
 const router = useRouter();
@@ -165,6 +168,7 @@ const currentProjectId = route.params.projectId == "dashboard" ? ref(-1) : ref(r
 const currentProject = ref("");
 const paperListLoading = ref(false);
 
+// 加载项目信息
 const loadProjectInfo = projectId => {
   paperListLoading.value = true;
   getProjectInfo(projectId)
@@ -192,12 +196,13 @@ onBeforeRouteUpdate(to => {
   }
 });
 
-const creatingProject = ref(false);
-const createProject = () => {
-  if (creatingProject.value) {
+// 创建项目
+let creatingProject = false;
+const handleCreateProject = () => {
+  if (creatingProject) {
     return;
   }
-  creatingProject.value = true;
+  creatingProject = true;
   ElMessageBox.prompt("请输入项目名称", "创建项目", {
     confirmButtonText: "创建",
     cancelButtonText: "取消",
@@ -205,20 +210,65 @@ const createProject = () => {
     inputErrorMessage: "项目名称不能为空",
   })
     .then(({ value }) => {
-      ElMessage({
-        type: "success",
-        message: `Your email is:${value}`,
-      });
+      createProject(value)
+        .then(data => {
+          ElMessage({
+            message: "项目创建成功",
+            type: "success",
+          });
+          projectList.value.push(data);
+          router.push(`/home/${data.id}`);
+        })
+        .catch(err => {
+          ElMessageBox.alert(err, "创建项目失败", {
+            confirmButtonText: "确定",
+            type: "error",
+          });
+        });
     })
     .catch(() => {})
     .finally(() => {
-      creatingProject.value = false;
+      creatingProject = false;
     });
 };
 
-const paperList = ref([]);
+// 加入项目
+let joiningProject = false;
+const handleJoinProject = () => {
+  if (joiningProject) {
+    return;
+  }
+  joiningProject = true;
+  ElMessageBox.prompt("请输入项目邀请码", "加入项目", {
+    confirmButtonText: "加入",
+    cancelButtonText: "取消",
+    inputPattern: /^[a-zA-Z0-9]{8}$/,
+    inputErrorMessage: "邀请码必须是8位字母或数字",
+  })
+    .then(({ value }) => {
+      joinProject(value)
+        .then(data => {
+          ElMessage({
+            type: "success",
+            message: `您已成功加入项目${data.name}`,
+          });
+          router.push(`/home/${data.id}`);
+        })
+        .catch(err => {
+          ElMessageBox.alert(err, "加入项目失败", {
+            confirmButtonText: "确定",
+            type: "error",
+          });
+        });
+    })
+    .catch(() => {})
+    .finally(() => {
+      joiningProject = false;
+    });
+};
 
 // 论文列表
+const paperList = ref([]);
 const table = ref(null);
 // 行点击事件
 const handleRowClick = row => {
@@ -370,7 +420,7 @@ onMounted(async () => {
         margin: 12px 20px;
 
         h2 {
-          font-size: 20px;
+          font-size: 24px;
           font-weight: 500;
           text-align: left;
         }
@@ -443,9 +493,18 @@ onMounted(async () => {
         box-sizing: border-box;
         padding: 8px 20px;
 
-        h2 {
-          font-size: 24px;
-          font-weight: normal;
+        .left {
+          text-align: left;
+
+          .name {
+            font-size: 22px;
+            font-weight: 500;
+          }
+
+          .desc {
+            font-size: 14px;
+            color: var(--secondary-text);
+          }
         }
 
         .operations {
