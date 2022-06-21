@@ -27,7 +27,6 @@ export function login(username, password) {
         }
       })
       .catch(err => {
-        console.error(err);
         reject(err);
       });
   });
@@ -59,7 +58,6 @@ export function register(username, password, confirmPassword, phone) {
         }
       })
       .catch(err => {
-        console.error(err);
         reject(err);
       });
   });
@@ -126,7 +124,7 @@ export function checkToken(token) {
         }
       })
       .catch(err => {
-        reject(err);
+        reject(err.response ? err.response.data.message : err.message);
         logout();
       });
   });
@@ -143,7 +141,7 @@ export function fetchUserInfo() {
         resolve(res.data);
       })
       .catch(err => {
-        reject(err);
+        reject(err.response ? err.response.data.message : err.message);
       });
   });
 }

@@ -28,8 +28,10 @@
               </el-button>
             </template>
             <template #default>
-              <el-button type="primary" @click="createProject">新建项目</el-button>
-              <el-button>加入项目</el-button>
+              <div>
+                <el-button type="primary" @click="createProject">新建项目</el-button>
+                <el-button>加入项目</el-button>
+              </div>
             </template>
           </el-popover>
         </div>
@@ -46,7 +48,7 @@
         </el-menu>
       </div>
       <div class="right-container">
-        <template v-if="currentProject == -1">
+        <template v-if="currentProjectId == -1">
           <div class="placeholder">
             <h3>欢迎回到PaperHelper</h3>
             <h4>从左侧选择一个项目继续工作吧</h4>
@@ -54,10 +56,10 @@
         </template>
         <template v-else>
           <div class="header">
-            <h2>{{ projectList[currentProject].name }}</h2>
+            <h2>{{ currentProject.name }}</h2>
             <div class="operations">
               <!-- 编辑按钮 -->
-              <el-button circle @click="edit = !edit" :type="edit ? 'primary' : 'default'">
+              <el-button circle @click="edit = !edit" :type="edit ? 'primary' : 'default'" v-if="paperList.length > 0">
                 <el-icon>
                   <i-ep-edit v-if="!edit" />
                   <i-ep-check v-else />
@@ -95,6 +97,7 @@
             row-key="id"
             @row-click="handleRowClick"
             row-class-name="paper-list-item"
+            v-loading="paperListLoading"
           >
             <el-table-column type="selection" width="40" v-if="edit" />
             <el-table-column prop="title" label="名称" sortable />
@@ -127,10 +130,11 @@ import { onBeforeRouteUpdate } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { fetchUserInfo, logout } from "@/api/user";
 import { useUserStore } from "@/store";
-import { getProjectList } from "@/api/project";
+import { getProjectList, getProjectInfo } from "@/api/project";
 
 const isDark = useDark();
 const router = useRouter();
+const route = useRoute();
 
 // 用户信息
 const userStore = useUserStore();
@@ -157,14 +161,34 @@ const handleLogout = () => {
 // 项目
 const projectListLoading = ref(true);
 const projectList = ref([]);
+const currentProjectId = route.params.projectId == "dashboard" ? ref(-1) : ref(route.params.projectId);
+const currentProject = ref("");
+const paperListLoading = ref(false);
+
+const loadProjectInfo = projectId => {
+  paperListLoading.value = true;
+  getProjectInfo(projectId)
+    .then(data => {
+      currentProject.value = data;
+      paperList.value = data.list || [];
+    })
+    .catch(err => {
+      ElMessageBox.alert(err, "获取论文列表失败", {
+        confirmButtonText: "确定",
+        type: "error",
+      });
+    })
+    .finally(() => (paperListLoading.value = false));
+};
 
 // 处理项目变化
-const currentProject = useRoute().params.projectId == "dashboard" ? ref(-1) : ref(useRoute().params.projectId);
 onBeforeRouteUpdate(to => {
   if (to.params.projectId == "dashboard") {
-    currentProject.value = -1;
+    currentProjectId.value = -1;
   } else {
-    currentProject.value = projectList.value.findIndex(item => item.id == to.params.projectId);
+    let projectId = to.params.projectId;
+    currentProjectId.value = projectList.value.findIndex(item => item.id == projectId);
+    loadProjectInfo(projectId);
   }
 });
 
@@ -192,40 +216,9 @@ const createProject = () => {
     });
 };
 
-const paperList = ref([
-  {
-    id: 1,
-    title: "论文一",
-    abstract: "论文一摘要",
-    keywords: "论文一关键词",
-    authors: ["作者1", "作者2"],
-    publication: "刊物1",
-    volume: "论文一卷",
-    pages: "20",
-    year: 2020,
-    month: 1,
-    day: 1,
-    read: false,
-    createTime: "2020-01-02",
-  },
-  {
-    id: 2,
-    title: "论文二",
-    abstract: "论文二摘要",
-    keywords: "论文二关键词",
-    authors: ["作者1", "作者2"],
-    publication: "刊物2",
-    volume: "论文二卷",
-    pages: "10",
-    year: 2021,
-    month: 1,
-    day: 1,
-    read: false,
-    createTime: "2020-01-01",
-  },
-]);
+const paperList = ref([]);
 
-// 列表
+// 论文列表
 const table = ref(null);
 // 行点击事件
 const handleRowClick = row => {
@@ -272,7 +265,7 @@ onMounted(async () => {
     } catch (error) {
       ElMessage({
         type: "error",
-        message: "获取个人信息失败:" + (error.detail || error.message || error),
+        message: "获取个人信息失败：" + error,
       });
       return;
     }
@@ -282,7 +275,7 @@ onMounted(async () => {
       projectList.value = res;
     })
     .catch(err => {
-      ElMessageBox.confirm(err.detail || err.message || err, "获取项目列表失败", {
+      ElMessageBox.confirm(err, "获取项目列表失败", {
         confirmButtonText: "重试",
         cancelButtonText: "忽略",
         type: "error",
@@ -295,6 +288,9 @@ onMounted(async () => {
     .finally(() => {
       projectListLoading.value = false;
     });
+  if (route.params.projectId != "dashboard") {
+    loadProjectInfo(route.params.projectId);
+  }
 });
 </script>
 

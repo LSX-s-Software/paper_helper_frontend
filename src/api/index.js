@@ -27,6 +27,7 @@ http.interceptors.response.use(
       console.warn(error);
       switch (error.response.status) {
         case 401:
+          location.href = "/";
           break;
         default:
           break;
