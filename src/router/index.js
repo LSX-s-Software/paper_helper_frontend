@@ -33,7 +33,6 @@ const router = createRouter({
 });
 
 router.beforeEach(to => {
-  console.log(to);
   if (to.meta.needAuth) {
     //判断当前路由是否需要进行权限控制
     let token = localStorage.getItem("token");

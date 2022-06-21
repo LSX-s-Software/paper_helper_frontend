@@ -3,12 +3,6 @@
     <div class="header">
       <h1>PaperHelper</h1>
       <div class="right">
-        <el-button circle @click="toggleDark()">
-          <el-icon>
-            <i-ep-sunny v-if="isDark"></i-ep-sunny>
-            <i-ep-moon v-else></i-ep-moon>
-          </el-icon>
-        </el-button>
         <el-popover :width="192" trigger="hover">
           <template #reference>
             <div class="user">
@@ -25,8 +19,26 @@
     </div>
     <div class="main-container">
       <div class="left-container">
-        <h2>项目</h2>
-        <el-menu class="nav-menu" router>
+        <div class="header">
+          <h2>项目</h2>
+          <el-popover trigger="click" :width="195" v-if="!projectListLoading && projectList.length > 0">
+            <template #reference>
+              <el-button circle>
+                <el-icon><i-ep-plus /></el-icon>
+              </el-button>
+            </template>
+            <template #default>
+              <el-button type="primary" @click="createProject">新建项目</el-button>
+              <el-button>加入项目</el-button>
+            </template>
+          </el-popover>
+        </div>
+        <div class="placeholder" v-if="!projectListLoading && projectList.length == 0">
+          <span>目前没有项目</span>
+          <el-button type="primary" @click="createProject">新建项目</el-button>
+          <el-button>加入项目</el-button>
+        </div>
+        <el-menu class="nav-menu" router v-loading="projectListLoading">
           <el-menu-item v-for="item in projectList" :key="item.id" :index="`/home/${item.id}`">
             <el-icon><i-ep-document /></el-icon>
             <span>{{ item.name }}</span>
@@ -110,20 +122,27 @@
 </template>
 
 <script setup>
-import { useDark, useToggle } from "@vueuse/core";
+import { useDark } from "@vueuse/core";
 import { onBeforeRouteUpdate } from "vue-router";
-import { ElMessage } from "element-plus";
-import { logout } from "@/api/user";
+import { ElMessage, ElMessageBox } from "element-plus";
+import { fetchUserInfo, logout } from "@/api/user";
+import { useUserStore } from "@/store";
+import { getProjectList } from "@/api/project";
 
 const isDark = useDark();
-const toggleDark = useToggle(isDark);
 const router = useRouter();
 
 // 用户信息
-const userInfo = reactive({
-  username: "张三",
-  avatar: "https://github.com/fluidicon.png",
-});
+const userStore = useUserStore();
+const userInfo = ref(
+  userStore.id != ""
+    ? userStore.info
+    : {
+        username: "加载中",
+        avatar: "",
+      }
+);
+
 const handleLogout = () => {
   logout();
   userInfo.username = "";
@@ -136,20 +155,9 @@ const handleLogout = () => {
 };
 
 // 项目
-const projectList = ref([
-  {
-    id: 1,
-    name: "项目一",
-    description: "项目一描述",
-    createTime: "2020-01-01",
-  },
-  {
-    id: 2,
-    name: "项目二",
-    description: "项目二描述",
-    createTime: "2020-01-01",
-  },
-]);
+const projectListLoading = ref(true);
+const projectList = ref([]);
+
 // 处理项目变化
 const currentProject = useRoute().params.projectId == "dashboard" ? ref(-1) : ref(useRoute().params.projectId);
 onBeforeRouteUpdate(to => {
@@ -159,6 +167,30 @@ onBeforeRouteUpdate(to => {
     currentProject.value = projectList.value.findIndex(item => item.id == to.params.projectId);
   }
 });
+
+const creatingProject = ref(false);
+const createProject = () => {
+  if (creatingProject.value) {
+    return;
+  }
+  creatingProject.value = true;
+  ElMessageBox.prompt("请输入项目名称", "创建项目", {
+    confirmButtonText: "创建",
+    cancelButtonText: "取消",
+    inputPattern: /\s*\S+?/,
+    inputErrorMessage: "项目名称不能为空",
+  })
+    .then(({ value }) => {
+      ElMessage({
+        type: "success",
+        message: `Your email is:${value}`,
+      });
+    })
+    .catch(() => {})
+    .finally(() => {
+      creatingProject.value = false;
+    });
+};
 
 const paperList = ref([
   {
@@ -231,6 +263,39 @@ const deletePaper = () => {
     );
   });
 };
+
+// 加载数据
+onMounted(async () => {
+  if (userStore.id == "") {
+    try {
+      userInfo.value = await fetchUserInfo();
+    } catch (error) {
+      ElMessage({
+        type: "error",
+        message: "获取个人信息失败:" + (error.detail || error.message || error),
+      });
+      return;
+    }
+  }
+  getProjectList()
+    .then(res => {
+      projectList.value = res;
+    })
+    .catch(err => {
+      ElMessageBox.confirm(err.detail || err.message || err, "获取项目列表失败", {
+        confirmButtonText: "重试",
+        cancelButtonText: "忽略",
+        type: "error",
+      })
+        .then(() => {
+          location.reload();
+        })
+        .catch(() => {});
+    })
+    .finally(() => {
+      projectListLoading.value = false;
+    });
+});
 </script>
 
 <style lang="less" scoped>
@@ -294,6 +359,7 @@ const deletePaper = () => {
     flex: 1;
 
     .left-container {
+      position: relative;
       width: 250px;
       background-color: var(--primary-bg);
       --bg-color: var(--primary-bg);
@@ -301,11 +367,37 @@ const deletePaper = () => {
       flex-direction: column;
       align-items: stretch;
 
-      h2 {
-        font-size: 20px;
-        font-weight: 500;
-        text-align: left;
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         margin: 12px 20px;
+
+        h2 {
+          font-size: 20px;
+          font-weight: 500;
+          text-align: left;
+        }
+      }
+
+      .placeholder {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+
+        span {
+          display: block;
+        }
+
+        button {
+          margin: 0;
+        }
       }
 
       .nav-menu {

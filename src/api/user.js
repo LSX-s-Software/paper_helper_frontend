@@ -1,4 +1,5 @@
 import { http } from "@/api/index";
+import { useUserStore } from "@/store";
 
 /**
  * 登录
@@ -15,7 +16,11 @@ export function login(username, password) {
       })
       .then(res => {
         if (res.data.token) {
+          const user = useUserStore();
           localStorage.setItem("token", res.data.token);
+          user.id = res.data.id;
+          delete res.data.token;
+          user.info = res.data;
           resolve();
         } else {
           throw { message: res.data.message };
@@ -123,6 +128,22 @@ export function checkToken(token) {
       .catch(err => {
         reject(err);
         logout();
+      });
+  });
+}
+
+export function fetchUserInfo() {
+  const user = useUserStore();
+  return new Promise((resolve, reject) => {
+    http
+      .get(`/users/${user.id}`)
+      .then(res => {
+        user.id = res.data.id;
+        user.info = res.data;
+        resolve(res.data);
+      })
+      .catch(err => {
+        reject(err);
       });
   });
 }
