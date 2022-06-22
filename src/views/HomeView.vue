@@ -282,7 +282,7 @@ const showProjectDetail = () => {
 // 复制邀请码
 const copyInvitation = () => {
   navigator.clipboard
-    .writeText(currentProject.value.id)
+    .writeText(currentProject.value.invitation_code)
     .then(() => {
       ElMessage({
         message: "邀请码已复制到剪贴板",
