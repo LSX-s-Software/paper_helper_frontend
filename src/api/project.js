@@ -94,10 +94,34 @@ export function leaveProject(projectId) {
   });
 }
 
+/**
+ * 编辑项目
+ * @param {String} projectId 项目id
+ * @param {String} key 键
+ * @param {String} value 值
+ * @returns 编辑结果Promise
+ */
 export function editProject(projectId, key, value) {
   return new Promise((resolve, reject) => {
     http
       .put(`/projects/${projectId}`, { [key]: value })
+      .then(res => {
+        resolve(res.data);
+      })
+      .catch(err => reject(err.response ? err.response.data.detail : err.message));
+  });
+}
+
+/**
+ * 更改项目所有者
+ * @param {String} projectId 项目id
+ * @param {String} newAdminId 新所有者id
+ * @returns 更改结果Promise
+ */
+export function transferProject(projectId, newAdminId) {
+  return new Promise((resolve, reject) => {
+    http
+      .put(`/projects/${projectId}/owners/${newAdminId}`)
       .then(res => {
         resolve(res.data);
       })

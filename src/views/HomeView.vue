@@ -155,10 +155,10 @@
           </el-descriptions-item>
           <el-descriptions-item label="创建时间">{{ currentProject.create_time }}</el-descriptions-item>
           <el-descriptions-item label="更新时间">{{ currentProject.update_time }}</el-descriptions-item>
-          <el-descriptions-item label="创建者">
+          <el-descriptions-item label="所有者">
             {{ currentProject.members.find(m => m.is_owner).username }}
           </el-descriptions-item>
-          <el-descriptions-item label="项目成员" class-name="avatar-list">
+          <el-descriptions-item label="项目成员" :class-name="'avatar-list ' + (selectingNewAdmin ? 'selectable' : '')">
             <el-tooltip
               v-for="member in currentProject.members"
               :key="member.id"
@@ -166,7 +166,11 @@
               :content="member.username"
               placement="bottom"
             >
-              <el-avatar :size="36" :src="member.avatar" />
+              <el-avatar
+                :size="36"
+                :src="member.avatar"
+                @click="selectingNewAdmin ? handleTransferProject(member) : false"
+              />
             </el-tooltip>
           </el-descriptions-item>
         </el-descriptions>
@@ -174,6 +178,18 @@
     </template>
     <template #footer>
       <div>
+        <el-popover
+          placement="top"
+          title="更改项目的所有者"
+          trigger="click"
+          :width="200"
+          content="在上方成员列表中选择一个成员作为新的项目所有者"
+          v-if="isOwner"
+        >
+          <template #reference>
+            <el-button v-if="isOwner" @click="handleTransferProject">更改所有者</el-button>
+          </template>
+        </el-popover>
         <el-popconfirm
           v-if="isOwner"
           title="确认删除这个项目吗？此操作不能撤销"
@@ -217,6 +233,7 @@ import {
   deleteProject,
   joinProject,
   leaveProject,
+  transferProject,
 } from "@/api/project";
 import { formatTime } from "@/utils/util";
 
@@ -436,7 +453,7 @@ const handleJoinProject = () => {
         .then(data => {
           ElMessage({
             type: "success",
-            message: `您已成功加入项目${data.name}`,
+            message: `您已成功加入项目“${data.name}”`,
           });
           projectList.value.push(data);
           router.push(`/home/${data.id}`);
@@ -475,6 +492,50 @@ const handleLeaveProject = projectId => {
         type: "error",
       });
     });
+};
+
+// 迁移项目
+const selectingNewAdmin = ref(false);
+const handleTransferProject = (newOwner = null) => {
+  if (!selectingNewAdmin.value) {
+    selectingNewAdmin.value = true;
+    return;
+  }
+  selectingNewAdmin.value = false;
+  if (newOwner.is_owner) {
+    ElMessageBox.alert("您已是项目所有者，无需迁移", "提示", {
+      confirmButtonText: "确定",
+      type: "info",
+    });
+    return;
+  }
+  ElMessageBox.confirm(`确定要将项目迁移给${newOwner.username}吗？`, "迁移项目", {
+    confirmButtonText: "迁移",
+    cancelButtonText: "取消",
+  }).then(() => {
+    transferProject(currentProjectId.value, newOwner.id)
+      .then(() => {
+        ElMessage({
+          type: "success",
+          message: "项目的所有者现在已更改为" + newOwner.username,
+        });
+        isOwner.value = false;
+        currentProject.value.members.forEach(m => {
+          if (m.id == newOwner.id) {
+            m.is_owner = true;
+          } else if (m.id == userInfo.id) {
+            m.is_owner = false;
+          }
+        });
+        showProjectInfoDrawer.value = false;
+      })
+      .catch(err => {
+        ElMessageBox.alert(err, "迁移项目失败", {
+          confirmButtonText: "确定",
+          type: "error",
+        });
+      });
+  });
 };
 
 // 论文列表
@@ -766,5 +827,20 @@ onMounted(async () => {
   gap: 12px;
   margin-top: 8px;
   margin-left: 8px;
+
+  &.selectable {
+    & > * {
+      cursor: pointer;
+      transition: all ease 0.1s;
+
+      &:hover {
+        border: 1px solid var(--theme);
+      }
+
+      &:active {
+        filter: brightness(0.8);
+      }
+    }
+  }
 }
 </style>
