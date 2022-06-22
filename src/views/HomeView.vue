@@ -11,7 +11,7 @@
             </div>
           </template>
           <template #default>
-            <el-button>修改信息</el-button>
+            <el-button @click="showUserInfoDrawer = true">修改信息</el-button>
             <el-button type="danger" @click="handleLogout">退出登录</el-button>
           </template>
         </el-popover>
@@ -130,9 +130,10 @@
       </div>
     </div>
   </div>
+
   <!-- 项目信息抽屉 -->
   <el-drawer v-model="showProjectInfoDrawer">
-    <template #title>
+    <template #header>
       <h4 style="font-weight: 500; text-align: left">项目信息</h4>
     </template>
     <template #default>
@@ -217,13 +218,60 @@
       </div>
     </template>
   </el-drawer>
+
+  <!-- 个人信息抽屉 -->
+  <el-drawer v-model="showUserInfoDrawer">
+    <template #header>
+      <h4 style="font-weight: 500; text-align: left">个人信息</h4>
+    </template>
+    <template #default>
+      <div>
+        <el-descriptions :column="1">
+          <el-descriptions-item label="用户名">
+            {{ userInfo.username }}
+            <el-button text circle @click="handleEditUserInfo('username')">
+              <el-icon><i-ep-edit /></el-icon>
+            </el-button>
+          </el-descriptions-item>
+          <el-descriptions-item label="手机号">
+            {{ userInfo.phone }}
+            <el-button text circle @click="handleEditUserInfo('phone')">
+              <el-icon><i-ep-edit /></el-icon>
+            </el-button>
+          </el-descriptions-item>
+          <el-descriptions-item label="密码">
+            ********
+            <el-button text circle @click="handleEditUserInfo('password')">
+              <el-icon><i-ep-edit /></el-icon>
+            </el-button>
+          </el-descriptions-item>
+          <el-descriptions-item label="头像">
+            <el-upload
+              style="display: inline-block"
+              action="https://jsonplaceholder.typicode.com/posts/"
+              :show-file-list="false"
+              :http-request="handleAvatarUpload"
+              accept="image/*"
+            >
+              <el-button text circle>
+                <el-icon><i-ep-edit /></el-icon>
+              </el-button>
+            </el-upload>
+          </el-descriptions-item>
+          <el-descriptions-item>
+            <el-avatar :size="100" :src="userInfo.avatar" />
+          </el-descriptions-item>
+        </el-descriptions>
+      </div>
+    </template>
+  </el-drawer>
 </template>
 
 <script setup>
 import { useDark } from "@vueuse/core";
 import { onBeforeRouteUpdate } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { fetchUserInfo, logout } from "@/api/user";
+import { fetchUserInfo, logout, checkUsername, editUserInfo, changePassword, uploadAvatar } from "@/api/user";
 import { useUserStore } from "@/store";
 import {
   getProjectList,
@@ -261,6 +309,113 @@ const handleLogout = () => {
     message: "您已成功退出登录",
     type: "success",
   });
+};
+
+// 修改用户信息
+const showUserInfoDrawer = ref(false);
+
+const handleEditUserInfo = key => {
+  let friendlyName, regExp, errMsg;
+  switch (key) {
+    case "username":
+      friendlyName = "用户名";
+      regExp = /\s*\S+?/;
+      errMsg = "用户名不能为空";
+      break;
+    case "phone":
+      friendlyName = "手机号";
+      regExp = /^[0-9]{11}$/;
+      errMsg = "手机号无效";
+      break;
+    case "password":
+      ElMessageBox.prompt("请输入旧密码", "修改密码", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        inputPattern: /\s*\S+?/,
+        inputType: "password",
+        inputErrorMessage: "密码不能为空",
+      }).then(({ value: oldPassword }) => {
+        ElMessageBox.prompt("请输入新密码", "修改密码", {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          inputPattern: /\s*\S+?/,
+          inputType: "password",
+          inputErrorMessage: "密码不能为空",
+        }).then(({ value: newPassword }) => {
+          changePassword(oldPassword, newPassword)
+            .then(() => {
+              ElMessage({
+                message: "修改密码成功",
+                type: "success",
+              });
+            })
+            .catch(err => {
+              ElMessageBox.alert(err, "密码修改失败", {
+                confirmButtonText: "确定",
+                type: "error",
+              });
+            });
+        });
+      });
+      return;
+    default:
+      break;
+  }
+  ElMessageBox.prompt("请输入新的" + friendlyName, "编辑用户信息", {
+    confirmButtonText: "确定",
+    cancelButtonText: "取消",
+    inputPattern: regExp,
+    inputErrorMessage: errMsg,
+    inputValue: userInfo.value[key],
+    inputType: key == "password" ? "password" : "text",
+  }).then(async ({ value }) => {
+    if (key == "username") {
+      try {
+        await checkUsername(value);
+      } catch (error) {
+        ElMessageBox.alert("用户名已存在", "用户名修改失败", {
+          confirmButtonText: "确定",
+          type: "error",
+        });
+        return;
+      }
+    }
+    if (value == userInfo.value[key]) {
+      return;
+    }
+    editUserInfo(key, value)
+      .then(() => {
+        userInfo.value[key] = value;
+        ElMessage({
+          message: `${friendlyName}修改成功`,
+          type: "success",
+        });
+      })
+      .catch(err => {
+        ElMessageBox.alert(err, `${friendlyName}修改失败`, {
+          confirmButtonText: "确定",
+          type: "error",
+        });
+      });
+  });
+};
+
+// 修改头像
+const handleAvatarUpload = options => {
+  uploadAvatar(options.file)
+    .then(res => {
+      userInfo.value.avatar = res.avatar;
+      ElMessage({
+        message: "头像修改成功",
+        type: "success",
+      });
+    })
+    .catch(err => {
+      ElMessageBox.alert(err, "头像修改失败", {
+        confirmButtonText: "确定",
+        type: "error",
+      });
+    });
 };
 
 // 项目

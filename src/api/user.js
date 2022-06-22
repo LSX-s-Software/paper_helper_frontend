@@ -130,6 +130,10 @@ export function checkToken(token) {
   });
 }
 
+/**
+ * 获取用户信息
+ * @returns {Promise} 获取用户信息Promise
+ */
 export function fetchUserInfo() {
   const user = useUserStore();
   return new Promise((resolve, reject) => {
@@ -138,6 +142,73 @@ export function fetchUserInfo() {
       .then(res => {
         user.id = res.data.id;
         user.info = res.data;
+        resolve(res.data);
+      })
+      .catch(err => {
+        reject(err.response ? err.response.data.detail : err.message);
+      });
+  });
+}
+
+/**
+ * 编辑用户信息
+ * @param {String} key 键
+ * @param {String} value 值
+ * @returns 编辑结果Promise
+ */
+export function editUserInfo(key, value) {
+  return new Promise((resolve, reject) => {
+    const user = useUserStore();
+    http
+      .put(`/users/${user.id}`, { [key]: value })
+      .then(() => {
+        user.info[key] = value;
+        resolve();
+      })
+      .catch(err => {
+        reject(err.response ? err.response.data.detail : err.message);
+      });
+  });
+}
+
+/**
+ * 修改密码
+ * @param {String} oldPassword 旧密码
+ * @param {String} newPassword 新密码
+ * @returns 修改结果Promise
+ */
+export function changePassword(oldPassword, newPassword) {
+  return new Promise((resolve, reject) => {
+    const user = useUserStore();
+    http
+      .put(`/users/${user.id}`, {
+        old_password: oldPassword,
+        new_password: newPassword,
+      })
+      .then(() => {
+        resolve();
+      })
+      .catch(err => {
+        reject(err.response ? err.response.data.detail : err.message);
+      });
+  });
+}
+
+/**
+ * 上传头像
+ * @param {File} file 文件
+ * @returns 上传结果Promise
+ */
+export function uploadAvatar(file) {
+  return new Promise((resolve, reject) => {
+    const user = useUserStore();
+    const formData = new FormData();
+    formData.append("file", file);
+    http
+      .post(`/users/${user.id}/avatars`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+      .then(res => {
         resolve(res.data);
       })
       .catch(err => {
