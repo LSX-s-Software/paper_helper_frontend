@@ -49,7 +49,8 @@
       </div>
       <div class="right-container">
         <template v-if="currentProjectId == -1">
-          <div class="placeholder">
+          <div class="welcome-screen">
+            <img src="/img/undraw_online_articles_re_yrkj.svg" alt="" />
             <h3>欢迎回到PaperHelper</h3>
             <h4>从左侧选择一个项目继续工作吧</h4>
           </div>
@@ -662,13 +663,18 @@ onMounted(async () => {
       }
     }
 
-    .placeholder {
+    .welcome-screen {
       flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-direction: column;
       color: var(--secondary-text);
+
+      img {
+        height: 40%;
+        transform: translateY(-20px);
+      }
 
       h3,
       h4 {
