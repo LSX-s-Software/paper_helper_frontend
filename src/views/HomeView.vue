@@ -78,8 +78,7 @@
                 v-if="!edit"
                 accept=".pdf"
                 :show-file-list="false"
-                :on-success="handleFileUploadSuccess"
-                :on-error="handleFileUploadError"
+                :http-request="handleFileUpload"
               >
                 <el-button circle :type="edit ? 'default' : 'primary'">
                   <el-icon><i-ep-plus /></el-icon>
@@ -278,7 +277,7 @@
 import { useDark } from "@vueuse/core";
 import { onBeforeRouteUpdate } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { fetchUserInfo, logout, checkUsername, editUserInfo, changePassword, uploadAvatar } from "@/api/user";
+import {fetchUserInfo, logout, checkUsername, editUserInfo, changePassword, uploadAvatar} from "@/api/user";
 import { useUserStore } from "@/store";
 import {
   getProjectList,
@@ -291,7 +290,7 @@ import {
   transferProject,
 } from "@/api/project";
 import { formatTime } from "@/utils/util";
-import { deletePaper } from "@/api/paper";
+import {deletePaper, uploadPaper} from "@/api/paper";
 
 const isDark = useDark();
 const router = useRouter();
@@ -736,20 +735,26 @@ const handleRowClick = row => {
   }
 };
 
-// 添加论文
-const handleFileUploadSuccess = (res, file) => {
-  console.log(res, file);
-  ElMessage({
-    message: "上传成功",
-    type: "success",
-  });
-};
-const handleFileUploadError = (err, file) => {
-  console.error(err, file);
-  ElMessage({
-    message: `上传失败：${err.message}`,
-    type: "error",
-  });
+// 上传论文
+const handleFileUpload = options => {
+  uploadPaper(options.file, route.params.projectId)
+      .then(res => {
+        let p = res;
+        p.create_time = formatTime(p.create_time, "yyyy-MM-dd");
+        p.read = false;
+
+        paperList.value.push(p);
+        ElMessage({
+          message: "论文上传成功",
+          type: "success",
+        });
+      })
+      .catch(err => {
+        ElMessageBox.alert(err, "论文上传失败", {
+          confirmButtonText: "确定",
+          type: "error",
+        });
+      });
 };
 
 // 编辑状态
