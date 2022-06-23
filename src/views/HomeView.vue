@@ -141,13 +141,13 @@
         <el-descriptions :column="1">
           <el-descriptions-item label="项目名">
             {{ currentProject.name }}
-            <el-button text circle @click="handleEditProject(currentProjectId, 'name')">
+            <el-button text circle @click="handleEditProject('name')">
               <el-icon><i-ep-edit /></el-icon>
             </el-button>
           </el-descriptions-item>
           <el-descriptions-item label="项目描述">
             {{ currentProject.description }}
-            <el-button text circle @click="handleEditProject(currentProjectId, 'description')">
+            <el-button text circle @click="handleEditProject('description')">
               <el-icon><i-ep-edit /></el-icon>
             </el-button>
           </el-descriptions-item>
@@ -472,7 +472,7 @@ const copyInvitation = () => {
 };
 
 // 编辑项目
-const handleEditProject = (projectId, key) => {
+const handleEditProject = key => {
   let friendlyName, regExp, errMsg;
   switch (key) {
     case "name":
@@ -495,7 +495,7 @@ const handleEditProject = (projectId, key) => {
     inputErrorMessage: errMsg,
     inputValue: currentProject.value[key],
   }).then(({ value }) => {
-    editProject(projectId, key, value)
+    editProject(currentProjectId.value, key, value)
       .then(() => {
         ElMessage({
           message: `项目${friendlyName}修改成功`,
