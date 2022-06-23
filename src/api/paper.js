@@ -1,5 +1,4 @@
 import { http } from "@/api/index";
-import {useUserStore} from "@/store";
 
 /**
  * 获取论文详情
@@ -83,22 +82,20 @@ export function deleteTag(paperId, tagId) {
  */
 export function uploadPaper(file, projectId) {
   return new Promise((resolve, reject) => {
-    const user = useUserStore();
-    const formData = new FormData();
+    let formData = new FormData();
     formData.append("file", file);
-
-    let filenameList = file.name.split('.');
-    const extname = filenameList.pop();
-    const filename = filenameList.join('.');
+    let filenameList = file.name.split(".");
+    let extname = encodeURIComponent(filenameList.pop());
+    let filename = encodeURIComponent(filenameList.join("."));
     http
-        .post(`/projects/${projectId}/attachments?extname=${encodeURIComponent(extname)}&filename=${encodeURIComponent(filename)}`, formData, {
-          headers: {"Content-Type": "multipart/form-data"},
-        })
-        .then(res => {
-          resolve(res.data);
-        })
-        .catch(err => {
-          reject(err.response ? err.response.data.detail : err.message);
-        });
+      .post(`/projects/${projectId}/attachments?extname=${extname}&filename=${filename}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+      .then(res => {
+        resolve(res.data);
+      })
+      .catch(err => {
+        reject(err.response ? err.response.data.detail : err.message);
+      });
   });
 }

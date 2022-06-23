@@ -205,14 +205,14 @@ export function uploadAvatar(file) {
     const formData = new FormData();
     formData.append("file", file);
     http
-        .post(`/users/${user.id}/avatars`, formData, {
-          headers: {"Content-Type": "multipart/form-data"},
-        })
-        .then(res => {
-          resolve(res.data);
-        })
-        .catch(err => {
-          reject(err.response ? err.response.data.detail : err.message);
-        });
+      .post(`/users/${user.id}/avatars`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+      .then(res => {
+        resolve(res.data);
+      })
+      .catch(err => {
+        reject(err.response ? err.response.data.detail : err.message);
+      });
   });
 }

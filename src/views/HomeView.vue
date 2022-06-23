@@ -74,12 +74,7 @@
                 </el-icon>
               </el-button>
               <!-- 添加按钮 -->
-              <el-upload
-                v-if="!edit"
-                accept=".pdf"
-                :show-file-list="false"
-                :http-request="handleFileUpload"
-              >
+              <el-upload v-if="!edit" accept=".pdf" :show-file-list="false" :http-request="handleFileUpload">
                 <el-button circle :type="edit ? 'default' : 'primary'">
                   <el-icon><i-ep-plus /></el-icon>
                 </el-button>
@@ -276,8 +271,8 @@
 <script setup>
 import { useDark } from "@vueuse/core";
 import { onBeforeRouteUpdate } from "vue-router";
-import { ElMessage, ElMessageBox } from "element-plus";
-import {fetchUserInfo, logout, checkUsername, editUserInfo, changePassword, uploadAvatar} from "@/api/user";
+import { ElMessageBox } from "element-plus";
+import { fetchUserInfo, logout, checkUsername, editUserInfo, changePassword, uploadAvatar } from "@/api/user";
 import { useUserStore } from "@/store";
 import {
   getProjectList,
@@ -290,7 +285,8 @@ import {
   transferProject,
 } from "@/api/project";
 import { formatTime } from "@/utils/util";
-import {deletePaper, uploadPaper} from "@/api/paper";
+import { deletePaper, uploadPaper } from "@/api/paper";
+import { showSuccessPrompt, showErrorPrompt } from "@/utils/MyPrompt";
 
 const isDark = useDark();
 const router = useRouter();
@@ -312,10 +308,7 @@ const handleLogout = () => {
   userInfo.value.username = "";
   userInfo.value.avatar = "";
   router.replace("/");
-  ElMessage({
-    message: "您已成功退出登录",
-    type: "success",
-  });
+  showSuccessPrompt("您已成功退出登录");
 };
 
 // 修改用户信息
@@ -350,18 +343,8 @@ const handleEditUserInfo = key => {
           inputErrorMessage: "密码不能为空",
         }).then(({ value: newPassword }) => {
           changePassword(oldPassword, newPassword)
-            .then(() => {
-              ElMessage({
-                message: "修改密码成功",
-                type: "success",
-              });
-            })
-            .catch(err => {
-              ElMessageBox.alert(err, "密码修改失败", {
-                confirmButtonText: "确定",
-                type: "error",
-              });
-            });
+            .then(() => showSuccessPrompt("修改密码成功"))
+            .catch(err => showErrorPrompt("密码修改失败", err));
         });
       });
       return;
@@ -393,17 +376,9 @@ const handleEditUserInfo = key => {
     editUserInfo(key, value)
       .then(() => {
         userInfo.value[key] = value;
-        ElMessage({
-          message: `${friendlyName}修改成功`,
-          type: "success",
-        });
+        showSuccessPrompt(`${friendlyName}修改成功`);
       })
-      .catch(err => {
-        ElMessageBox.alert(err, `${friendlyName}修改失败`, {
-          confirmButtonText: "确定",
-          type: "error",
-        });
-      });
+      .catch(err => showErrorPrompt(`${friendlyName}修改失败`, err));
   });
 };
 
@@ -412,17 +387,9 @@ const handleAvatarUpload = options => {
   uploadAvatar(options.file)
     .then(res => {
       userInfo.value.avatar = res.avatar;
-      ElMessage({
-        message: "头像修改成功",
-        type: "success",
-      });
+      showSuccessPrompt("头像修改成功");
     })
-    .catch(err => {
-      ElMessageBox.alert(err, "头像修改失败", {
-        confirmButtonText: "确定",
-        type: "error",
-      });
-    });
+    .catch(err => showErrorPrompt("头像修改失败", err));
 };
 
 // 项目
@@ -455,12 +422,7 @@ const loadProjectInfo = projectId => {
         return p;
       });
     })
-    .catch(err => {
-      ElMessageBox.alert(err, "获取论文列表失败", {
-        confirmButtonText: "确定",
-        type: "error",
-      });
-    })
+    .catch(err => showErrorPrompt("获取论文列表失败", err))
     .finally(() => (paperListLoading.value = false));
 };
 
@@ -475,18 +437,10 @@ const showProjectDetail = () => {
 const copyInvitation = () => {
   navigator.clipboard
     .writeText(currentProject.value.invitation_code)
-    .then(() => {
-      ElMessage({
-        message: "邀请码已复制到剪贴板",
-        type: "success",
-      });
-    })
+    .then(() => showSuccessPrompt("邀请码已复制到剪贴板"))
     .catch(err => {
       console.error(err);
-      ElMessage({
-        message: "邀请码复制失败",
-        type: "error",
-      });
+      showErrorPrompt("邀请码复制失败", err);
     });
 };
 
@@ -516,18 +470,10 @@ const handleEditProject = key => {
   }).then(({ value }) => {
     editProject(currentProjectId.value, key, value)
       .then(() => {
-        ElMessage({
-          message: `项目${friendlyName}修改成功`,
-          type: "success",
-        });
+        showSuccessPrompt(`项目${friendlyName}修改成功`);
         currentProject.value[key] = value;
       })
-      .catch(err => {
-        ElMessageBox.alert(err, `项目${friendlyName}修改失败`, {
-          confirmButtonText: "确定",
-          type: "error",
-        });
-      });
+      .catch(err => showErrorPrompt(`项目${friendlyName}修改失败`, err));
   });
 };
 
@@ -542,10 +488,7 @@ const handleDeleteProject = projectId => {
   } else {
     deleteProject(projectId)
       .then(() => {
-        ElMessage({
-          message: "项目已删除",
-          type: "success",
-        });
+        showSuccessPrompt("项目已删除");
         showProjectInfoDrawer.value = false;
         projectList.value.splice(
           projectList.value.findIndex(p => p.id == projectId),
@@ -553,12 +496,7 @@ const handleDeleteProject = projectId => {
         );
         router.replace("/home/dashboard");
       })
-      .catch(err => {
-        ElMessageBox.alert(err, "删除项目失败", {
-          confirmButtonText: "确定",
-          type: "error",
-        });
-      });
+      .catch(err => showErrorPrompt("删除项目失败", err));
   }
 };
 
@@ -589,19 +527,11 @@ const handleCreateProject = () => {
     .then(({ value }) => {
       createProject(value)
         .then(data => {
-          ElMessage({
-            message: "项目创建成功",
-            type: "success",
-          });
+          showSuccessPrompt("项目创建成功");
           projectList.value.push(data);
           router.push(`/home/${data.id}`);
         })
-        .catch(err => {
-          ElMessageBox.alert(err, "创建项目失败", {
-            confirmButtonText: "确定",
-            type: "error",
-          });
-        });
+        .catch(err => showErrorPrompt("创建项目失败", err));
     })
     .catch(() => {})
     .finally(() => {
@@ -625,19 +555,11 @@ const handleJoinProject = () => {
     .then(({ value }) => {
       joinProject(value)
         .then(data => {
-          ElMessage({
-            type: "success",
-            message: `您已成功加入项目“${data.name}”`,
-          });
+          showSuccessPrompt(`您已成功加入项目“${data.name}”`);
           projectList.value.push(data);
           router.push(`/home/${data.id}`);
         })
-        .catch(err => {
-          ElMessageBox.alert(err, "加入项目失败", {
-            confirmButtonText: "确定",
-            type: "error",
-          });
-        });
+        .catch(err => showErrorPrompt("加入项目失败", err));
     })
     .catch(() => {})
     .finally(() => {
@@ -649,10 +571,7 @@ const handleJoinProject = () => {
 const handleLeaveProject = projectId => {
   leaveProject(projectId)
     .then(() => {
-      ElMessage({
-        type: "success",
-        message: "您已成功退出项目",
-      });
+      showSuccessPrompt("您已成功退出项目");
       projectList.value.splice(
         projectList.value.findIndex(p => p.id == projectId),
         1
@@ -660,12 +579,7 @@ const handleLeaveProject = projectId => {
       showProjectInfoDrawer.value = false;
       router.replace("/home/dashboard");
     })
-    .catch(err => {
-      ElMessageBox.alert(err, "退出项目失败", {
-        confirmButtonText: "确定",
-        type: "error",
-      });
-    });
+    .catch(err => showErrorPrompt("退出项目失败", err));
 };
 
 // 迁移项目
@@ -689,10 +603,7 @@ const handleTransferProject = (newOwner = null) => {
   }).then(() => {
     transferProject(currentProjectId.value, newOwner.id)
       .then(() => {
-        ElMessage({
-          type: "success",
-          message: "项目的所有者现在已更改为" + newOwner.username,
-        });
+        showSuccessPrompt("项目的所有者现在已更改为" + newOwner.username);
         isOwner.value = false;
         currentProject.value.members.forEach(m => {
           if (m.id == newOwner.id) {
@@ -703,12 +614,7 @@ const handleTransferProject = (newOwner = null) => {
         });
         showProjectInfoDrawer.value = false;
       })
-      .catch(err => {
-        ElMessageBox.alert(err, "迁移项目失败", {
-          confirmButtonText: "确定",
-          type: "error",
-        });
-      });
+      .catch(err => showErrorPrompt("迁移项目失败", err));
   });
 };
 
@@ -738,23 +644,16 @@ const handleRowClick = row => {
 // 上传论文
 const handleFileUpload = options => {
   uploadPaper(options.file, route.params.projectId)
-      .then(res => {
-        let p = res;
-        p.create_time = formatTime(p.create_time, "yyyy-MM-dd");
-        p.read = false;
-
-        paperList.value.push(p);
-        ElMessage({
-          message: "论文上传成功",
-          type: "success",
-        });
-      })
-      .catch(err => {
-        ElMessageBox.alert(err, "论文上传失败", {
-          confirmButtonText: "确定",
-          type: "error",
-        });
-      });
+    .then(res => {
+      let p = res;
+      p.create_time = formatTime(p.create_time, "yyyy-MM-dd");
+      p.read = false;
+      paperList.value.push(p);
+      showSuccessPrompt("论文上传成功");
+    })
+    .catch(err => {
+      showErrorPrompt("论文上传失败", err);
+    });
 };
 
 // 编辑状态
@@ -767,15 +666,9 @@ const handleDeletePaper = () => {
       let index = paperList.value.findIndex(p => p.id == row.id);
       paperList.value.splice(index, 1);
     });
-    ElMessage({
-      type: "success",
-      message: "删除成功",
-    });
+    showSuccessPrompt("删除成功");
   } catch (error) {
-    ElMessageBox.alert(error, "删除失败", {
-      confirmButtonText: "确定",
-      type: "error",
-    });
+    showErrorPrompt("删除失败", error);
   }
 };
 
@@ -785,10 +678,7 @@ onMounted(async () => {
     try {
       userInfo.value = await fetchUserInfo();
     } catch (error) {
-      ElMessage({
-        type: "error",
-        message: "获取个人信息失败：" + error,
-      });
+      showErrorPrompt("获取个人信息失败", error);
       return;
     }
   }

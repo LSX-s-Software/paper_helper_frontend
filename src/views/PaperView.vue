@@ -111,6 +111,7 @@ import MindMap from "../components/MindMap.vue";
 import { getPaper, addTag, deleteTag } from "@/api/paper";
 import { ElMessageBox } from "element-plus";
 import { formatTime } from "@/utils/util";
+import { showErrorPrompt } from "@/utils/MyPrompt";
 
 useDark();
 const router = useRouter();
@@ -160,10 +161,7 @@ const handleCreateTag = () => {
         newTagInputVisible.value = false;
       })
       .catch(err => {
-        ElMessageBox.alert(err, "添加标签失败", {
-          confirmButtonText: "确定",
-          type: "error",
-        });
+        showErrorPrompt("添加标签失败", err);
       });
   } else {
     newTagInputVisible.value = false;
@@ -176,10 +174,7 @@ const handleDeleteTag = tag => {
       paper.value.tag.splice(paper.value.tag.indexOf(tag), 1);
     })
     .catch(err => {
-      ElMessageBox.alert(err, "删除标签失败", {
-        confirmButtonText: "确定",
-        type: "error",
-      });
+      showErrorPrompt("删除标签失败", err);
     });
 };
 
