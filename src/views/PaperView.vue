@@ -15,7 +15,7 @@
     >
       <div class="reader">
         <div class="mask" v-if="mousedown"></div>
-        <PDFReader :style="{ width: leftWidth + 'px' }"></PDFReader>
+        <PDFReader :style="{ width: leftWidth + 'px' }" :url="paper && paper.attachment.url"></PDFReader>
       </div>
       <div class="separator">
         <div class="handle"></div>
@@ -23,23 +23,39 @@
       <div class="right">
         <div class="mask" v-if="mousedown"></div>
         <el-tabs class="tabs" stretch v-model="tab">
-          <el-tab-pane label="信息" name="info">
+          <el-tab-pane label="信息" name="info" v-loading="loading == 'info'">
             <div class="info">
               <div class="info-item">
                 <span>标题</span>
                 <span>{{ paper.title }}</span>
               </div>
               <div class="info-item">
-                <span>作者</span>
-                <span class="author" v-for="(item, index) in paper.authors" :key="index">{{ item }}</span>
+                <span>标签</span>
+                <div class="tag-contianer">
+                  <el-tag
+                    v-for="item in paper.tag"
+                    :key="item.id"
+                    closable
+                    effect="dark"
+                    round
+                    @close="handleDeleteTag(item)"
+                    >{{ item.name }}</el-tag
+                  >
+                  <el-input
+                    v-if="newTagInputVisible"
+                    v-model="newTagName"
+                    size="small"
+                    autofocus
+                    id="new-tag-input"
+                    @keyup.enter="handleCreateTag"
+                    @blur="handleCreateTag"
+                  />
+                  <el-button size="small" round @click="newTagInputVisible = true">+ 添加</el-button>
+                </div>
               </div>
               <div class="info-item">
-                <span>关键词</span>
-                <span>{{ paper.keywords }}</span>
-              </div>
-              <div class="info-item">
-                <span>摘要</span>
-                <span>{{ paper.abstract }}</span>
+                <span>DOI</span>
+                <span>{{ paper.doi }}</span>
               </div>
               <div class="info-item">
                 <span>来源</span>
@@ -53,15 +69,33 @@
                 >
               </div>
               <div class="info-item">
+                <span>作者</span>
+                <span class="tag" v-for="(item, index) in paper.author" :key="index">{{ item }}</span>
+              </div>
+              <div class="info-item">
+                <span>关键词</span>
+                <span class="tag" v-for="(kw, index) in paper.keyword" :key="index">{{ kw }}</span>
+              </div>
+              <div class="info-item">
+                <span>摘要</span>
+                <span>{{ paper.abstract }}</span>
+              </div>
+              <div class="info-item">
+                <span>参考文献</span>
+                <ol>
+                  <li v-for="(item, index) in paper.reference" :key="index">{{ item }}</li>
+                </ol>
+              </div>
+              <div class="info-item">
                 <span>添加时间</span>
-                <span>{{ paper.createTime }}</span>
+                <span>{{ paper.create_time }}</span>
               </div>
             </div>
           </el-tab-pane>
-          <el-tab-pane label="笔记" name="note" lazy>
+          <el-tab-pane label="笔记" name="note" lazy v-loading="loading == 'note'">
             <textarea class="note" v-model="note" placeholder="在这里记录读论文时的想法💡"></textarea>
           </el-tab-pane>
-          <el-tab-pane label="思维导图" name="mindmap" lazy>
+          <el-tab-pane label="思维导图" name="mindmap" lazy v-loading="loading == 'mindmap'">
             <MindMap />
           </el-tab-pane>
         </el-tabs>
@@ -74,26 +108,15 @@
 import { useDark } from "@vueuse/core";
 import PDFReader from "../components/PDFReader.vue";
 import MindMap from "../components/MindMap.vue";
+import { getPaper, addTag, deleteTag } from "@/api/paper";
+import { ElMessageBox } from "element-plus";
+import { formatTime } from "@/utils/util";
 
 useDark();
 const router = useRouter();
-// const route = useRoute();
-
-const paper = reactive({
-  id: 1,
-  title: "论文一",
-  abstract: "Lorem ipsum dolor sit amet, consectetur adipisicing elit.",
-  keywords: "论文一关键词",
-  authors: ["作者1", "作者2"],
-  publication: "刊物1",
-  volume: "论文一卷",
-  pages: "20",
-  year: 2020,
-  month: 1,
-  day: 1,
-  read: false,
-  createTime: "2020-01-02",
-});
+const route = useRoute();
+const paper = ref("");
+let paperId = route.params.paperId;
 
 const tab = ref(localStorage.getItem("tab") || "info");
 watch(tab, val => {
@@ -102,6 +125,7 @@ watch(tab, val => {
 
 const note = ref("");
 
+// 调整左右窗口大小
 const windowWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
 const separatorWidth = 14;
 const leftWidth = ref(parseFloat(localStorage.getItem("leftWidth")) || (windowWidth - separatorWidth) * 0.84);
@@ -122,6 +146,63 @@ const handleResizeComplete = () => {
     localStorage.setItem("leftWidth", leftWidth.value);
   }
 };
+
+//标签
+const newTagInputVisible = ref(false);
+const newTagName = ref("");
+
+const handleCreateTag = () => {
+  if (newTagName.value) {
+    addTag(paperId, newTagName.value)
+      .then(res => {
+        paper.value.tag.push(res);
+        newTagName.value = "";
+        newTagInputVisible.value = false;
+      })
+      .catch(err => {
+        ElMessageBox.alert(err, "添加标签失败", {
+          confirmButtonText: "确定",
+          type: "error",
+        });
+      });
+  } else {
+    newTagInputVisible.value = false;
+  }
+};
+
+const handleDeleteTag = tag => {
+  deleteTag(paperId, tag.id)
+    .then(() => {
+      paper.value.tag.splice(paper.value.tag.indexOf(tag), 1);
+    })
+    .catch(err => {
+      ElMessageBox.alert(err, "删除标签失败", {
+        confirmButtonText: "确定",
+        type: "error",
+      });
+    });
+};
+
+// 加载论文信息
+const loading = ref(tab.value);
+onMounted(() => {
+  getPaper(paperId)
+    .then(res => {
+      res.create_time = formatTime(res.create_time);
+      paper.value = res;
+    })
+    .catch(err => {
+      ElMessageBox.alert(err, "加载失败", {
+        confirmButtonText: "确定",
+        type: "error",
+      }).then(() => {
+        router.back();
+      });
+    })
+    .finally(() => {
+      loading.value = false;
+    });
+});
 </script>
 
 <style lang="less" scoped>
@@ -229,17 +310,27 @@ const handleResizeComplete = () => {
         .info-item {
           margin-bottom: 16px;
 
-          span {
+          & > span {
             display: block;
           }
 
-          span:first-child {
+          & > span:first-child {
             font-size: 18px;
             font-weight: 500;
             margin-bottom: 4px;
           }
 
-          span.author {
+          .tag-contianer {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+
+            #new-tag-input {
+              width: 50%;
+            }
+          }
+
+          span.tag {
             display: inline-block;
             padding: 1px 4px;
             border-radius: 5px;

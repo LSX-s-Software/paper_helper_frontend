@@ -3,7 +3,7 @@
     <div class="header">
       <h1>PaperHelper</h1>
       <div class="right">
-        <el-popover :width="192" trigger="hover">
+        <el-popover :width="192" trigger="click">
           <template #reference>
             <div class="user">
               <img :src="userInfo.avatar" alt="" class="avatar" />
@@ -86,7 +86,7 @@
                 </el-button>
               </el-upload>
               <!-- 删除按钮 -->
-              <el-popconfirm title="确认要删除这些文献吗？此操作不可撤销" @confirm="deletePaper()">
+              <el-popconfirm title="确认要删除这些文献吗？此操作不可撤销" @confirm="handleDeletePaper">
                 <template #reference>
                   <el-button type="danger" circle v-if="edit">
                     <el-icon><i-ep-delete /></el-icon>
@@ -109,16 +109,23 @@
           >
             <el-table-column type="selection" width="40" v-if="edit" />
             <el-table-column prop="title" label="名称" sortable />
+            <el-table-column prop="tag" label="标签" width="180">
+              <template #default="scope">
+                <span class="tag" v-for="(t, index) in scope.row.tag" :key="index">
+                  {{ t.name }}
+                </span>
+              </template>
+            </el-table-column>
             <el-table-column prop="authors" label="作者">
               <template #default="scope">
-                <span class="author-tag" v-for="(author, index) in scope.row.authors" :key="index">
+                <span class="tag" v-for="(author, index) in scope.row.author" :key="index">
                   {{ author }}
                 </span>
               </template>
             </el-table-column>
             <el-table-column prop="year" label="年份" width="80" sortable />
             <el-table-column prop="publication" label="来源" sortable />
-            <el-table-column prop="createTime" label="添加日期" width="120" sortable />
+            <el-table-column prop="create_time" label="添加日期" width="120" sortable />
             <el-table-column prop="read" label="已读" width="60">
               <template #default="scope">
                 <el-icon v-if="scope.row.read"><i-ep-circleCheckFilled /></el-icon>
@@ -284,6 +291,7 @@ import {
   transferProject,
 } from "@/api/project";
 import { formatTime } from "@/utils/util";
+import { deletePaper } from "@/api/paper";
 
 const isDark = useDark();
 const router = useRouter();
@@ -434,7 +442,19 @@ const loadProjectInfo = projectId => {
       data.update_time = formatTime(data.update_time);
       isOwner.value = data.members.find(m => m.id == userInfo.value.id).is_owner;
       currentProject.value = data;
-      paperList.value = data.list || [];
+      // 处理论文列表
+      let readPaperList = localStorage.getItem("readPaperList");
+      if (readPaperList != null && readPaperList != "") {
+        readPaperList = JSON.parse(readPaperList);
+      } else {
+        readPaperList = {};
+      }
+      paperList.value = data.paper.map(p => {
+        p.create_time_long = formatTime(p.create_time);
+        p.create_time = formatTime(p.create_time, "yyyy-MM-dd");
+        p.read = p.id in readPaperList;
+        return p;
+      });
     })
     .catch(err => {
       ElMessageBox.alert(err, "获取论文列表失败", {
@@ -701,6 +721,17 @@ const handleRowClick = row => {
   if (edit.value) {
     table.value.toggleRowSelection(row);
   } else {
+    // 标记已读
+    if (!row.read) {
+      let readPaperList = localStorage.getItem("readPaperList");
+      if (readPaperList != null && readPaperList != "") {
+        readPaperList = JSON.parse(readPaperList);
+      } else {
+        readPaperList = {};
+      }
+      readPaperList[row.id] = true;
+      localStorage.setItem("readPaperList", JSON.stringify(readPaperList));
+    }
     router.push(`/paper/${row.id}`);
   }
 };
@@ -724,13 +755,23 @@ const handleFileUploadError = (err, file) => {
 // 编辑状态
 const edit = ref(false);
 // 删除论文
-const deletePaper = () => {
-  table.value.getSelectionRows().forEach(row => {
-    paperList.value.splice(
-      paperList.value.findIndex(item => item.id == row.id),
-      1
-    );
-  });
+const handleDeletePaper = () => {
+  try {
+    table.value.getSelectionRows().forEach(async row => {
+      await deletePaper(row.id);
+      let index = paperList.value.findIndex(p => p.id == row.id);
+      paperList.value.splice(index, 1);
+    });
+    ElMessage({
+      type: "success",
+      message: "删除成功",
+    });
+  } catch (error) {
+    ElMessageBox.alert(error, "删除失败", {
+      confirmButtonText: "确定",
+      type: "error",
+    });
+  }
 };
 
 // 加载数据
@@ -959,7 +1000,7 @@ onMounted(async () => {
         margin: 12px 0;
       }
 
-      .author-tag {
+      .tag {
         display: inline-block;
         padding: 1px 4px;
         border-radius: 5px;
