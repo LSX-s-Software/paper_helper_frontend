@@ -32,6 +32,7 @@ export default {
       required: true,
     },
   },
+  emits: ["ready"],
   data() {
     return {
       doc: null,
@@ -72,6 +73,7 @@ export default {
           setTimeout(() => {
             this.initiating = false;
           }, 500);
+          this.$emit("ready");
         });
         // 监听事件，‘op’ 表示对文档有修改
         this.doc.on("op", (op, source) => {
@@ -86,6 +88,7 @@ export default {
       };
       socket.onerror = () => {
         ElMessage.error("无法连接协作服务器");
+        this.$emit("ready");
       };
     },
   },

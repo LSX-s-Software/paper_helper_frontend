@@ -23,7 +23,7 @@
       <div class="right">
         <div class="mask" v-if="mousedown"></div>
         <el-tabs class="tabs" stretch v-model="tab">
-          <el-tab-pane label="信息" name="info" v-loading="loading">
+          <el-tab-pane label="信息" name="info" v-loading="loadingPaperInfo">
             <div class="info">
               <div class="info-item">
                 <span>标题</span>
@@ -120,11 +120,11 @@
               </div>
             </div>
           </el-tab-pane>
-          <el-tab-pane label="笔记" name="note" lazy v-loading="loading">
+          <el-tab-pane label="笔记" name="note" lazy v-loading="loadingPaperInfo">
             <textarea class="note" v-model="note" placeholder="在这里记录读论文时的想法💡"></textarea>
           </el-tab-pane>
-          <el-tab-pane label="思维导图" name="mindmap" lazy v-loading="loading">
-            <MindMap v-if="!loading" :paper="paper" />
+          <el-tab-pane label="思维导图" name="mindmap" lazy v-loading="loadingPaperInfo || loadingMindmap">
+            <MindMap v-if="!loadingPaperInfo" :paper="paper" @ready="loadingMindmap = false" />
           </el-tab-pane>
         </el-tabs>
       </div>
@@ -207,6 +207,9 @@ let paperId = route.params.paperId;
 const tab = ref("info");
 watch(tab, (newVal, oldVal) => {
   if (newVal != oldVal) {
+    if (newVal == "mindmap") {
+      loadingMindmap.value = true;
+    }
     localStorage.setItem("tab", newVal);
   }
 });
@@ -266,7 +269,8 @@ const handleDeleteTag = tag => {
 };
 
 // 加载论文信息
-const loading = ref(true);
+const loadingPaperInfo = ref(true);
+const loadingMindmap = ref(false);
 onMounted(() => {
   getPaper(paperId)
     .then(res => {
@@ -283,7 +287,7 @@ onMounted(() => {
       });
     })
     .finally(() => {
-      loading.value = false;
+      loadingPaperInfo.value = false;
     });
 });
 
