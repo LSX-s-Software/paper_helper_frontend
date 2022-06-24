@@ -22,7 +22,8 @@
     "sharedb": "^3.0.0",
     "vue": "^3.2.13",
     "vue-router": "^4.0.3",
-    "vue3-mindmap": "^0.5.12"
+    "vue3-mindmap": "^0.5.12",
+    "vue3-quill": "^0.2.6"
   },
   "devDependencies": {
     "@babel/core": "^7.12.16",

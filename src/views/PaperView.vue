@@ -120,8 +120,8 @@
               </div>
             </div>
           </el-tab-pane>
-          <el-tab-pane label="笔记" name="note" lazy v-loading="loadingPaperInfo">
-            <textarea class="note" v-model="note" placeholder="在这里记录读论文时的想法💡"></textarea>
+          <el-tab-pane label="笔记" name="note" lazy v-loading="loadingPaperInfo || loadingNote">
+            <PaperNote v-if="!loadingPaperInfo" @ready="loadingNote = false"></PaperNote>
           </el-tab-pane>
           <el-tab-pane label="思维导图" name="mindmap" lazy v-loading="loadingPaperInfo || loadingMindmap">
             <MindMap v-if="!loadingPaperInfo" :paper="paper" @ready="loadingMindmap = false" />
@@ -197,6 +197,7 @@ import { getPaper, addTag, deleteTag, editPaperInfo } from "@/api/paper";
 import { ElMessageBox } from "element-plus";
 import { formatTime } from "@/utils/util";
 import { showErrorPrompt, showSuccessPrompt } from "@/utils/MyPrompt";
+import PaperNote from "../components/PaperNote.vue";
 
 useDark();
 const router = useRouter();
@@ -207,14 +208,11 @@ let paperId = route.params.paperId;
 const tab = ref("info");
 watch(tab, (newVal, oldVal) => {
   if (newVal != oldVal) {
-    if (newVal == "mindmap") {
-      loadingMindmap.value = true;
-    }
     localStorage.setItem("tab", newVal);
   }
 });
 
-const note = ref("");
+// const note = ref("");
 
 // 调整左右窗口大小
 const windowWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
@@ -270,7 +268,8 @@ const handleDeleteTag = tag => {
 
 // 加载论文信息
 const loadingPaperInfo = ref(true);
-const loadingMindmap = ref(false);
+const loadingMindmap = ref(true);
+const loadingNote = ref(true);
 onMounted(() => {
   getPaper(paperId)
     .then(res => {
