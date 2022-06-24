@@ -13,8 +13,13 @@
     "@vueuse/core": "^8.5.0",
     "axios": "^0.27.2",
     "core-js": "^3.8.3",
+    "diff-match-patch": "^1.0.5",
     "element-plus": "^2.2.2",
+    "json0-ot-diff": "github:kbadk/json0-ot-diff",
+    "ot-json1": "^1.0.2",
+    "ot-text-unicode": "^4.0.0",
     "pinia": "^2.0.14",
+    "sharedb": "^3.0.0",
     "vue": "^3.2.13",
     "vue-router": "^4.0.3",
     "vue3-mindmap": "^0.5.12"

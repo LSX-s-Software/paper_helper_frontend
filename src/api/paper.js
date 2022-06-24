@@ -1,5 +1,4 @@
 import { http } from "@/api/index";
-import {useUserStore} from "@/store";
 
 /**
  * 获取论文详情
@@ -28,13 +27,13 @@ export function getPaper(paperId) {
 export function editPaperInfo(paper, data) {
   return new Promise((resolve, reject) => {
     http
-        .put(`/papers/${paper.value.id}`, data)
-        .then(() => {
-          resolve();
-        })
-        .catch(err => {
-          reject(err.response ? err.response.data.detail : err.message);
-        });
+      .put(`/papers/${paper.value.id}`, data)
+      .then(() => {
+        resolve();
+      })
+      .catch(err => {
+        reject(err.response ? err.response.data.detail : err.message);
+      });
   });
 }
 
