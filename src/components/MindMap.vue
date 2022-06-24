@@ -36,7 +36,7 @@ export default {
   data() {
     return {
       doc: null,
-      initiating: true,
+      lock: true,
       mindmapkey: 0, // 用于强制刷新思维导图
       mindmapData: [{ name: "加载中" }],
     };
@@ -71,7 +71,7 @@ export default {
             console.log("已加载思维导图");
           }
           setTimeout(() => {
-            this.initiating = false;
+            this.lock = false;
           }, 500);
           this.$emit("ready");
         });
@@ -82,8 +82,12 @@ export default {
           if (source) {
             return;
           }
-          this.mindmapkey++;
+          this.lock = true;
           this.mindmapData = this.doc.data;
+          this.mindmapkey++;
+          setTimeout(() => {
+            this.lock = false;
+          }, 500);
         });
       };
       socket.onerror = () => {
@@ -96,7 +100,7 @@ export default {
   watch: {
     mindmapData: {
       handler(newValue, oldValue) {
-        if (this.initiating || this.doc == null) {
+        if (this.lock || this.doc == null) {
           return;
         }
         let op = jsondiff(oldValue, newValue, diffMatchPatch, otJson1, textUnicode);
