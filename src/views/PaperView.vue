@@ -15,14 +15,14 @@
     >
       <div class="reader">
         <div class="mask" v-if="mousedown"></div>
-        <PDFReader :style="{ width: leftWidth + 'px' }" :url="paper && paper.attachment.url"></PDFReader>
+        <PDFReader :url="paper && paper.attachment.url"></PDFReader>
       </div>
       <div class="separator">
         <div class="handle"></div>
       </div>
       <div class="right">
         <div class="mask" v-if="mousedown"></div>
-        <el-tabs class="tabs" stretch v-model="tab">
+        <el-tabs class="tabs" stretch v-model="tab" :style="{ width: rightWidth + 'px' }">
           <el-tab-pane label="信息" name="info" v-loading="loadingPaperInfo">
             <div class="info">
               <div class="info-item">
@@ -70,7 +70,7 @@
               <div class="info-item">
                 <span>来源</span>
                 <span
-                  >{{ `${paper.publication} ${paper.volume} ${paper.pages}` }}
+                  >{{ paper.publication }} {{ paper.volume }} {{ paper.pages }}
                   <el-button text circle @click="handleEditPaperInfo('source')">
                     <el-icon><i-ep-edit /></el-icon>
                   </el-button>
@@ -121,7 +121,7 @@
             </div>
           </el-tab-pane>
           <el-tab-pane label="笔记" name="note" lazy v-loading="loadingPaperInfo || loadingNote">
-            <PaperNote v-if="!loadingPaperInfo" @ready="loadingNote = false"></PaperNote>
+            <PaperNote v-if="!loadingPaperInfo" @ready="loadingNote = false" :paper-id="paper.id"></PaperNote>
           </el-tab-pane>
           <el-tab-pane label="思维导图" name="mindmap" lazy v-loading="loadingPaperInfo || loadingMindmap">
             <MindMap v-if="!loadingPaperInfo" :paper="paper" @ready="loadingMindmap = false" />
@@ -217,7 +217,7 @@ watch(tab, (newVal, oldVal) => {
 // 调整左右窗口大小
 const windowWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
 const separatorWidth = 14;
-const leftWidth = ref(parseFloat(localStorage.getItem("leftWidth")) || (windowWidth - separatorWidth) * 0.84);
+const rightWidth = ref(parseFloat(localStorage.getItem("leftWidth")) || (windowWidth - separatorWidth) * 0.16);
 let mousedown = ref(false);
 const handleMouseDown = e => {
   if (e.target.className == "handle") {
@@ -226,13 +226,13 @@ const handleMouseDown = e => {
 };
 const handleResize = e => {
   if (mousedown.value) {
-    leftWidth.value = leftWidth.value + e.movementX;
+    rightWidth.value = rightWidth.value - e.movementX;
   }
 };
 const handleResizeComplete = () => {
   if (mousedown.value) {
     mousedown.value = false;
-    localStorage.setItem("leftWidth", leftWidth.value);
+    localStorage.setItem("rightWidth", rightWidth.value);
   }
 };
 
@@ -476,6 +476,7 @@ const handleInputConfirm = () => {
 
     .reader {
       position: relative;
+      flex: 1;
     }
 
     .mask {
@@ -515,7 +516,6 @@ const handleInputConfirm = () => {
     }
 
     .right {
-      flex: 1;
       height: 100%;
       position: relative;
 
@@ -532,6 +532,7 @@ const handleInputConfirm = () => {
           flex: 1;
 
           .el-tab-pane {
+            width: 100%;
             height: 100%;
             box-sizing: border-box;
           }
