@@ -1,10 +1,18 @@
 <template>
   <div class="container">
     <div class="header">
-      <el-button circle type="primary" @click="router.back()">
-        <el-icon><i-ep-arrowLeftBold /></el-icon>
-      </el-button>
-      <h1>{{ paper.title }}</h1>
+      <div class="left">
+        <el-button circle type="primary" @click="router.back()">
+          <el-icon><i-ep-arrowLeftBold /></el-icon>
+        </el-button>
+        <h1>{{ paper.title }}</h1>
+      </div>
+      <div class="right">
+        <el-button type="primary" @click="rightWidth = -rightWidth">
+          <el-icon :size="20" v-if="rightWidth > 0"><i-ep-expand /></el-icon>
+          <el-icon :size="20" v-else><i-ep-fold /></el-icon>
+        </el-button>
+      </div>
     </div>
     <div
       class="main-container"
@@ -17,12 +25,12 @@
         <div class="mask" v-if="mousedown"></div>
         <PDFReader :url="paper && paper.attachment.url"></PDFReader>
       </div>
-      <div class="separator">
+      <div class="separator" v-if="rightWidth > 0">
         <div class="handle"></div>
       </div>
       <div class="right">
         <div class="mask" v-if="mousedown"></div>
-        <el-tabs class="tabs" stretch v-model="tab" :style="{ width: rightWidth + 'px' }">
+        <el-tabs class="tabs" stretch v-model="tab" :style="{ width: (rightWidth > 0 ? rightWidth : 0) + 'px' }">
           <el-tab-pane label="信息" name="info" v-loading="loadingPaperInfo">
             <div class="info">
               <div class="info-item">
@@ -450,7 +458,7 @@ const handleInputConfirm = () => {
 
   & > .header {
     display: flex;
-    justify-content: flex-start;
+    justify-content: space-between;
     align-items: center;
     gap: 12px;
     padding: 10px 20px;
@@ -460,9 +468,24 @@ const handleInputConfirm = () => {
     width: 100%;
     box-sizing: border-box;
 
-    h1 {
-      font-size: 24px;
-      font-weight: normal;
+    .left,
+    .right {
+      display: flex;
+      align-items: center;
+    }
+
+    .left {
+      max-width: calc(100% - 100px);
+
+      h1 {
+        font-size: 24px;
+        font-weight: normal;
+        margin-left: 12px;
+        text-align: left;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
     }
   }
 
