@@ -1,4 +1,5 @@
 import { http } from "@/api/index";
+import {useUserStore} from "@/store";
 
 /**
  * 获取论文详情
@@ -15,6 +16,25 @@ export function getPaper(paperId) {
       .catch(err => {
         reject(err.response ? err.response.data.detail : err.message);
       });
+  });
+}
+
+/**
+ * 编辑论文信息
+ * @param paper 论文对象
+ * @param data 更新数据
+ * @returns 编辑结果Promise
+ */
+export function editPaperInfo(paper, data) {
+  return new Promise((resolve, reject) => {
+    http
+        .put(`/papers/${paper.value.id}`, data)
+        .then(() => {
+          resolve();
+        })
+        .catch(err => {
+          reject(err.response ? err.response.data.detail : err.message);
+        });
   });
 }
 

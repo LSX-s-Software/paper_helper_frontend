@@ -27,7 +27,11 @@
             <div class="info">
               <div class="info-item">
                 <span>标题</span>
-                <span>{{ paper.title }}</span>
+                <span>{{ paper.title }}
+                <el-button text circle @click="handleEditPaperInfo('title')">
+                  <el-icon><i-ep-edit /></el-icon>
+                </el-button>
+                </span>
               </div>
               <div class="info-item">
                 <span>标签</span>
@@ -46,7 +50,7 @@
                     v-model="newTagName"
                     size="small"
                     autofocus
-                    id="new-tag-input"
+                    class="new-tag-input"
                     @keyup.enter="handleCreateTag"
                     @blur="handleCreateTag"
                   />
@@ -55,30 +59,51 @@
               </div>
               <div class="info-item">
                 <span>DOI</span>
-                <span>{{ paper.doi }}</span>
+                <span>{{ paper.doi }}
+                  <el-button text circle @click="handleEditPaperInfo('doi')">
+                    <el-icon><i-ep-edit /></el-icon>
+                  </el-button>
+                </span>
               </div>
               <div class="info-item">
                 <span>来源</span>
-                <span>{{ `${paper.publication} ${paper.volume} ${paper.pages}` }}</span>
+                <span>{{ `${paper.publication} ${paper.volume} ${paper.pages}` }}
+                  <el-button text circle @click="handleEditPaperInfo('source')">
+                    <el-icon><i-ep-edit /></el-icon>
+                  </el-button>
+                </span>
               </div>
               <div class="info-item">
                 <span>出版时间</span>
                 <span
                   >{{ paper.year }} 年 {{ paper.month && paper.month + " 月" }}
-                  {{ paper.day && paper.day + " 日" }}</span
-                >
+                  {{ paper.day && paper.day + " 日" }}
+                  <el-button text circle @click="handleEditPaperInfo('pub_time')">
+                    <el-icon><i-ep-edit /></el-icon>
+                  </el-button>
+                </span>
               </div>
               <div class="info-item">
                 <span>作者</span>
                 <span class="tag" v-for="(item, index) in paper.author" :key="index">{{ item }}</span>
+                <el-button text circle @click="handleEditPaperInfo('author')">
+                  <el-icon><i-ep-edit /></el-icon>
+                </el-button>
               </div>
               <div class="info-item">
                 <span>关键词</span>
                 <span class="tag" v-for="(kw, index) in paper.keyword" :key="index">{{ kw }}</span>
+                <el-button text circle @click="handleEditPaperInfo('keyword')">
+                  <el-icon><i-ep-edit /></el-icon>
+                </el-button>
               </div>
               <div class="info-item">
                 <span>摘要</span>
-                <span>{{ paper.abstract }}</span>
+                <span>{{ paper.abstract }}
+                  <el-button text circle @click="handleEditPaperInfo('abstract')">
+                    <el-icon><i-ep-edit /></el-icon>
+                  </el-button>
+                </span>
               </div>
               <div class="info-item">
                 <span>参考文献</span>
@@ -102,16 +127,79 @@
       </div>
     </div>
   </div>
+  <!-- 复杂修改弹窗 -->
+  <el-dialog v-model="paperInfoModifyDialogFormVisible" title="编辑论文信息" width="33%">
+    <el-form v-if="paperInfoModifyKey==='source'" :model="paperInfoModifyDialogForm">
+      <el-form-item label="出版单位" label-width="80px">
+        <el-input v-model="paperInfoModifyDialogForm.publication" autocomplete="off" />
+      </el-form-item>
+      <el-form-item label="卷号" label-width="80px">
+        <el-input v-model="paperInfoModifyDialogForm.volume" autocomplete="off" />
+      </el-form-item>
+      <el-form-item label="页数" label-width="80px">
+        <el-input v-model="paperInfoModifyDialogForm.pages" autocomplete="off" />
+      </el-form-item>
+    </el-form>
+
+    <el-form v-if="paperInfoModifyKey === 'pub_time'" :model="paperInfoModifyDialogForm">
+      <el-form-item label="出版日期" label-width="80px">
+        <el-date-picker
+            v-model="paperInfoModifyDialogForm.date"
+            type="date"
+            placeholder="选择出版日期"
+        />
+      </el-form-item>
+    </el-form>
+
+    <el-form v-if="paperInfoModifyKey === 'author' || paperInfoModifyKey === 'keyword'" :model="paperInfoModifyDialogForm" @submit.prevent>
+
+      <el-form-item label="作者" label-width="80px">
+        <div class="tag-contianer">
+          <el-tag
+              v-for="tag in paperInfoModifyDialogForm.tags"
+              :key="tag"
+              closable
+              :disable-transitions="false"
+              @close="handleClose(tag)"
+          >
+            {{ tag }}
+          </el-tag>
+          <el-input
+              class="new-tag-input"
+              v-if="paperInfoModifyDialogForm.tagInputVisible"
+              autofocus
+              v-model="paperInfoModifyDialogForm.tagInputValue"
+              size="small"
+              @keyup.enter.stop="handleInputConfirm"
+              @blur="handleInputConfirm"
+          />
+          <el-button v-else size="small" @click="showInput">
+            + 添加
+          </el-button>
+        </div>
+      </el-form-item>
+    </el-form>
+
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="paperInfoModifyDialogFormVisible = false">取消</el-button>
+        <el-button type="primary" @click="paperInfoModifyDialogFunction"
+        >确认</el-button
+        >
+      </span>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup>
 import { useDark } from "@vueuse/core";
 import PDFReader from "../components/PDFReader.vue";
 import MindMap from "../components/MindMap.vue";
-import { getPaper, addTag, deleteTag } from "@/api/paper";
+import {getPaper, addTag, deleteTag, editPaperInfo} from "@/api/paper";
 import { ElMessageBox } from "element-plus";
 import { formatTime } from "@/utils/util";
-import { showErrorPrompt } from "@/utils/MyPrompt";
+import {showErrorPrompt, showSuccessPrompt} from "@/utils/MyPrompt";
+import {changePassword, checkUsername, editUserInfo} from "@/api/user";
 
 useDark();
 const router = useRouter();
@@ -198,6 +286,150 @@ onMounted(() => {
       loading.value = false;
     });
 });
+
+// 修改论文信息
+const paperInfoModifyDialogFormVisible = ref(false);
+const paperInfoModifyKey = ref("");
+const paperInfoModifyDialogForm = ref({
+  publication: "",
+  volume: "",
+  pages: "",
+  date: null,
+  tags: [],
+  tagInputValue: "",
+  tagInputVisible: false,
+});
+
+const handleEditPaperInfo = key => {
+  // 简单修改
+  if (["title", "doi", "abstract"].indexOf(key) !== -1) {
+    let friendlyName, regExp, errMsg;
+    switch (key) {
+      case "title":
+        friendlyName = "标题";
+        regExp = /\s*\S+?/;
+        errMsg = "标题不能为空";
+        break;
+      case "doi":
+        friendlyName = "DOI";
+        break;
+      case "abstract":
+        friendlyName = "摘要";
+      default:
+        break;
+    }
+
+    ElMessageBox.prompt("请输入新的" + friendlyName, "编辑论文信息", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      inputPattern: regExp,
+      inputErrorMessage: errMsg,
+      inputValue: paper.value[key],
+      inputType: "text",
+    }).then(async ({value}) => {
+      if (value === paper.value[key]) {
+        return;
+      }
+      editPaperInfo(paper, { [key]: value })
+          .then(() => {
+            paper.value[key] = value;
+            showSuccessPrompt(`${friendlyName}修改成功`);
+          })
+          .catch(err => showErrorPrompt(`${friendlyName}修改失败`, err));
+    });
+  } else {
+    // 复杂修改
+    paperInfoModifyKey.value = key;
+    switch (key) {
+      case "source":
+        paperInfoModifyDialogForm.value.publication = paper.value.publication;
+        paperInfoModifyDialogForm.value.volume = paper.value.volume;
+        paperInfoModifyDialogForm.value.pages = paper.value.pages;
+        break;
+      case "pub_time":
+        paperInfoModifyDialogForm.value.date = new Date(paper.value.year, paper.value.month - 1, paper.value.day);
+        break;
+      case "author":
+        paperInfoModifyDialogForm.value.tags = paper.value.author.slice(0);
+        break;
+      case "keyword":
+        paperInfoModifyDialogForm.value.tags = paper.value.keyword.slice(0);
+        break;
+      default:
+        break;
+    }
+    paperInfoModifyDialogFormVisible.value = true;
+  }
+};
+
+const paperInfoModifyDialogFunction = () => {
+  // 更新来源
+  if (paperInfoModifyKey.value === "source") {
+    editPaperInfo(paper, {
+      publication: paperInfoModifyDialogForm.value.publication,
+      volume: paperInfoModifyDialogForm.value.volume,
+      pages: paperInfoModifyDialogForm.value.pages,
+    }).then(() => {
+      paper.value.publication = paperInfoModifyDialogForm.value.publication;
+      paper.value.volume = paperInfoModifyDialogForm.value.volume;
+      paper.value.pages = paperInfoModifyDialogForm.value.pages;
+      showSuccessPrompt("来源修改成功");
+    }).catch(err => showErrorPrompt("来源修改失败", err));
+  }
+
+  // 更新出版时间
+  if (paperInfoModifyKey.value === "pub_time") {
+    editPaperInfo(paper, {
+      year: paperInfoModifyDialogForm.value.date.getFullYear(),
+      month: paperInfoModifyDialogForm.value.date.getMonth() + 1,
+      day: paperInfoModifyDialogForm.value.date.getDate(),
+    }).then(() => {
+      paper.value.year = paperInfoModifyDialogForm.value.date.getFullYear();
+      paper.value.month = paperInfoModifyDialogForm.value.date.getMonth() + 1;
+      paper.value.day = paperInfoModifyDialogForm.value.date.getDate();
+      showSuccessPrompt("来源修改成功");
+    }).catch(err => showErrorPrompt("来源修改失败", err));
+  }
+
+  // 更新作者
+  if (paperInfoModifyKey.value === "author") {
+    editPaperInfo(paper, {
+      author: paperInfoModifyDialogForm.value.tags
+    }).then(() => {
+      paper.value.author = paperInfoModifyDialogForm.value.tags.slice(0);
+      showSuccessPrompt("作者修改成功");
+    }).catch(err => showErrorPrompt("作者修改失败", err));
+  }
+
+  // 更新关键词
+  if (paperInfoModifyKey.value === "keyword") {
+    editPaperInfo(paper, {
+      keyword: paperInfoModifyDialogForm.value.tags
+    }).then(() => {
+      paper.value.keyword = paperInfoModifyDialogForm.value.tags.slice(0);
+      showSuccessPrompt("关键词修改成功");
+    }).catch(err => showErrorPrompt("关键词修改失败", err));
+  }
+
+  paperInfoModifyDialogFormVisible.value = false;
+}
+
+const handleClose = (tag) => {
+  paperInfoModifyDialogForm.value.tags.splice(paperInfoModifyDialogForm.value.tags.indexOf(tag), 1)
+}
+
+const showInput = () => {
+  paperInfoModifyDialogForm.value.tagInputVisible = true
+  console.log(paperInfoModifyDialogForm.value.tagInputVisible.value)
+}
+
+const handleInputConfirm = () => {
+  if (paperInfoModifyDialogForm.value.tagInputValue) {
+    paperInfoModifyDialogForm.value.tags.push(paperInfoModifyDialogForm.value.tagInputValue);
+  }
+  paperInfoModifyDialogForm.value.tagInputVisible = false;
+  paperInfoModifyDialogForm.value.tagInputValue = '';
+}
 </script>
 
 <style lang="less" scoped>
@@ -315,16 +547,6 @@ onMounted(() => {
             margin-bottom: 4px;
           }
 
-          .tag-contianer {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px;
-
-            #new-tag-input {
-              width: 50%;
-            }
-          }
-
           span.tag {
             display: inline-block;
             padding: 1px 4px;
@@ -347,6 +569,16 @@ onMounted(() => {
         padding: 6px 8px;
       }
     }
+  }
+}
+
+:deep(.tag-contianer) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+
+  .new-tag-input {
+    width: 50%;
   }
 }
 </style>
