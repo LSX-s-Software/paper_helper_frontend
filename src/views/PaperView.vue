@@ -212,12 +212,10 @@ watch(tab, (newVal, oldVal) => {
   }
 });
 
-// const note = ref("");
-
 // 调整左右窗口大小
 const windowWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
 const separatorWidth = 14;
-const rightWidth = ref(parseFloat(localStorage.getItem("leftWidth")) || (windowWidth - separatorWidth) * 0.16);
+const rightWidth = ref(parseFloat(localStorage.getItem("rightWidth")) || (windowWidth - separatorWidth) * 0.16);
 let mousedown = ref(false);
 const handleMouseDown = e => {
   if (e.target.className == "handle") {
