@@ -23,7 +23,7 @@
       <div class="right">
         <div class="mask" v-if="mousedown"></div>
         <el-tabs class="tabs" stretch v-model="tab">
-          <el-tab-pane label="信息" name="info" v-loading="loading == 'info'">
+          <el-tab-pane label="信息" name="info" v-loading="loading">
             <div class="info">
               <div class="info-item">
                 <span>标题</span>
@@ -80,7 +80,6 @@
                 <span>出版时间</span>
                 <span
                   >{{ paper.year }} 年 {{ paper.month && paper.month + " 月" }}
-                  {{ paper.day && paper.day + " 日" }}
                   <el-button text circle @click="handleEditPaperInfo('pub_time')">
                     <el-icon><i-ep-edit /></el-icon>
                   </el-button>
@@ -121,11 +120,11 @@
               </div>
             </div>
           </el-tab-pane>
-          <el-tab-pane label="笔记" name="note" lazy v-loading="loading == 'note'">
+          <el-tab-pane label="笔记" name="note" lazy v-loading="loading">
             <textarea class="note" v-model="note" placeholder="在这里记录读论文时的想法💡"></textarea>
           </el-tab-pane>
-          <el-tab-pane label="思维导图" name="mindmap" lazy v-loading="loading == 'mindmap'">
-            <MindMap :paper="paper" />
+          <el-tab-pane label="思维导图" name="mindmap" lazy v-loading="loading">
+            <MindMap v-if="!loading" :paper="paper" />
           </el-tab-pane>
         </el-tabs>
       </div>
@@ -147,7 +146,7 @@
 
     <el-form v-if="paperInfoModifyKey === 'pub_time'" :model="paperInfoModifyDialogForm">
       <el-form-item label="出版日期" label-width="80px">
-        <el-date-picker v-model="paperInfoModifyDialogForm.date" type="date" placeholder="选择出版日期" />
+        <el-date-picker v-model="paperInfoModifyDialogForm.date" type="month" placeholder="选择出版日期" />
       </el-form-item>
     </el-form>
 
@@ -205,9 +204,11 @@ const route = useRoute();
 const paper = ref("");
 let paperId = route.params.paperId;
 
-const tab = ref(localStorage.getItem("tab") || "info");
-watch(tab, val => {
-  localStorage.setItem("tab", val);
+const tab = ref("info");
+watch(tab, (newVal, oldVal) => {
+  if (newVal != oldVal) {
+    localStorage.setItem("tab", newVal);
+  }
 });
 
 const note = ref("");
@@ -265,12 +266,13 @@ const handleDeleteTag = tag => {
 };
 
 // 加载论文信息
-const loading = ref(tab.value);
+const loading = ref(true);
 onMounted(() => {
   getPaper(paperId)
     .then(res => {
       res.create_time = formatTime(res.create_time);
       paper.value = res;
+      tab.value = localStorage.getItem("tab") || "info";
     })
     .catch(err => {
       ElMessageBox.alert(err, "加载失败", {

@@ -22,6 +22,7 @@ import * as otJson1 from "ot-json1";
 import * as jsondiff from "json0-ot-diff";
 import * as diffMatchPatch from "diff-match-patch";
 import * as textUnicode from "ot-text-unicode";
+import { ElMessage } from "element-plus";
 
 export default {
   components: { mindmap },
@@ -36,7 +37,7 @@ export default {
       doc: null,
       initiating: true,
       mindmapkey: 0, // 用于强制刷新思维导图
-      mindmapData: [{ name: "123" }],
+      mindmapData: [{ name: "加载中" }],
     };
   },
 
@@ -74,15 +75,17 @@ export default {
         });
         // 监听事件，‘op’ 表示对文档有修改
         this.doc.on("op", (op, source) => {
-          console.log("received op:", op, source);
+          // console.log("received op:", op, source);
           // source === true 表示是本客户端对 doc 的修改
           if (source) {
             return;
           }
           this.mindmapkey++;
-          console.log("doc.data@72", this.doc);
           this.mindmapData = this.doc.data;
         });
+      };
+      socket.onerror = () => {
+        ElMessage.error("无法连接协作服务器");
       };
     },
   },
