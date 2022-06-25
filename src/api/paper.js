@@ -107,7 +107,7 @@ export function uploadPaper(file, projectId) {
     let extname = encodeURIComponent(filenameList.pop());
     let filename = encodeURIComponent(filenameList.join("."));
     http
-      .post(`/projects/${projectId}/attachments?extname=${extname}&filename=${filename}`, formData, {
+      .post(`/projects/${projectId}/attachments/file?extname=${extname}&filename=${filename}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       })
       .then(res => {
@@ -116,6 +116,19 @@ export function uploadPaper(file, projectId) {
       .catch(err => {
         reject(err.response ? err.response.data.detail : err.message);
       });
+  });
+}
+
+export function createPaper(projectId, url) {
+  return new Promise((resolve, reject) => {
+    http
+        .post(`/projects/${projectId}/attachments/url?url=${url}`)
+        .then(res => {
+          resolve(res.data);
+        })
+        .catch(err => {
+          reject(err.response ? err.response.data.detail : err.message);
+        });
   });
 }
 
