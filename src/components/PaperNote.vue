@@ -73,7 +73,7 @@ export default {
     },
     initConnection() {
       ShareDB.types.register(otJson1.type);
-      let socket = new WebSocket("ws://localhost:9090");
+      let socket = new WebSocket("wss://api.paperhelper.nagico.cn/wss");
       socket.onopen = () => {
         let connection = new ShareDB.Connection(socket);
         this.doc = connection.get("note", `paper-${this.paperId}`);
