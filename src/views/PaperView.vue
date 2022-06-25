@@ -117,12 +117,6 @@
                 </span>
               </div>
               <div class="info-item">
-                <span>参考文献</span>
-                <ol>
-                  <li v-for="(item, index) in paper.reference" :key="index">{{ item }}</li>
-                </ol>
-              </div>
-              <div class="info-item">
                 <span>添加时间</span>
                 <span>{{ paper.create_time }}</span>
               </div>
@@ -152,18 +146,18 @@
       </el-form-item>
     </el-form>
 
-    <el-form v-if="paperInfoModifyKey === 'pub_time'" :model="paperInfoModifyDialogForm">
+    <el-form v-else-if="paperInfoModifyKey === 'pub_time'" :model="paperInfoModifyDialogForm">
       <el-form-item label="出版日期" label-width="80px">
         <el-date-picker v-model="paperInfoModifyDialogForm.date" type="month" placeholder="选择出版日期" />
       </el-form-item>
     </el-form>
 
     <el-form
-      v-if="paperInfoModifyKey === 'author' || paperInfoModifyKey === 'keyword'"
+      v-else-if="paperInfoModifyKey === 'author' || paperInfoModifyKey === 'keyword'"
       :model="paperInfoModifyDialogForm"
       @submit.prevent
     >
-      <el-form-item label="作者" label-width="80px">
+      <el-form-item :label="paperInfoModifyKey == 'author' ? '作者' : '关键词'" label-width="80px">
         <div class="tag-container">
           <el-tag
             v-for="tag in paperInfoModifyDialogForm.tags"
@@ -185,6 +179,17 @@
           />
           <el-button v-else size="small" @click="showInput"> + 添加 </el-button>
         </div>
+      </el-form-item>
+    </el-form>
+
+    <el-form v-else-if="paperInfoModifyKey === 'abstract'">
+      <el-form-item>
+        <el-input
+          v-model="paperInfoModifyDialogForm.abstract"
+          :autosize="{ minRows: 4, maxRows: 12 }"
+          type="textarea"
+          placeholder="请输入摘要"
+        />
       </el-form-item>
     </el-form>
 
@@ -223,7 +228,7 @@ watch(tab, (newVal, oldVal) => {
 // 调整左右窗口大小
 const windowWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
 const separatorWidth = 14;
-const rightWidth = ref(parseFloat(localStorage.getItem("rightWidth")) || (windowWidth - separatorWidth) * 0.16);
+const rightWidth = ref(parseFloat(localStorage.getItem("rightWidth")) || (windowWidth - separatorWidth) * 0.3);
 let mousedown = ref(false);
 const handleMouseDown = e => {
   if (e.target.className == "handle") {
@@ -307,11 +312,12 @@ const paperInfoModifyDialogForm = ref({
   tags: [],
   tagInputValue: "",
   tagInputVisible: false,
+  abstract: "",
 });
 
 const handleEditPaperInfo = key => {
   // 简单修改
-  if (["title", "doi", "abstract"].indexOf(key) !== -1) {
+  if (["title", "doi"].indexOf(key) !== -1) {
     let friendlyName, regExp, errMsg;
     switch (key) {
       case "title":
@@ -321,9 +327,6 @@ const handleEditPaperInfo = key => {
         break;
       case "doi":
         friendlyName = "DOI";
-        break;
-      case "abstract":
-        friendlyName = "摘要";
         break;
       default:
         break;
@@ -365,6 +368,9 @@ const handleEditPaperInfo = key => {
       case "keyword":
         paperInfoModifyDialogForm.value.tags = paper.value.keyword.slice(0);
         break;
+      case "abstract":
+        paperInfoModifyDialogForm.value.abstract = paper.value.abstract;
+        break;
       default:
         break;
     }
@@ -374,59 +380,67 @@ const handleEditPaperInfo = key => {
 
 const paperInfoModifyDialogFunction = () => {
   // 更新来源
-  if (paperInfoModifyKey.value === "source") {
-    editPaperInfo(paper, {
-      publication: paperInfoModifyDialogForm.value.publication,
-      volume: paperInfoModifyDialogForm.value.volume,
-      pages: paperInfoModifyDialogForm.value.pages,
-    })
-      .then(() => {
-        paper.value.publication = paperInfoModifyDialogForm.value.publication;
-        paper.value.volume = paperInfoModifyDialogForm.value.volume;
-        paper.value.pages = paperInfoModifyDialogForm.value.pages;
-        showSuccessPrompt("来源修改成功");
+  switch (paperInfoModifyKey.value) {
+    case "source":
+      editPaperInfo(paper, {
+        publication: paperInfoModifyDialogForm.value.publication,
+        volume: paperInfoModifyDialogForm.value.volume,
+        pages: paperInfoModifyDialogForm.value.pages,
       })
-      .catch(err => showErrorPrompt("来源修改失败", err));
-  }
-
-  // 更新出版时间
-  if (paperInfoModifyKey.value === "pub_time") {
-    editPaperInfo(paper, {
-      year: paperInfoModifyDialogForm.value.date.getFullYear(),
-      month: paperInfoModifyDialogForm.value.date.getMonth() + 1,
-      day: paperInfoModifyDialogForm.value.date.getDate(),
-    })
-      .then(() => {
-        paper.value.year = paperInfoModifyDialogForm.value.date.getFullYear();
-        paper.value.month = paperInfoModifyDialogForm.value.date.getMonth() + 1;
-        paper.value.day = paperInfoModifyDialogForm.value.date.getDate();
-        showSuccessPrompt("来源修改成功");
+        .then(() => {
+          paper.value.publication = paperInfoModifyDialogForm.value.publication;
+          paper.value.volume = paperInfoModifyDialogForm.value.volume;
+          paper.value.pages = paperInfoModifyDialogForm.value.pages;
+          showSuccessPrompt("来源修改成功");
+        })
+        .catch(err => showErrorPrompt("来源修改失败", err));
+      break;
+    case "pub_time": // 更新出版时间
+      editPaperInfo(paper, {
+        year: paperInfoModifyDialogForm.value.date.getFullYear(),
+        month: paperInfoModifyDialogForm.value.date.getMonth() + 1,
+        day: paperInfoModifyDialogForm.value.date.getDate(),
       })
-      .catch(err => showErrorPrompt("来源修改失败", err));
-  }
-
-  // 更新作者
-  if (paperInfoModifyKey.value === "author") {
-    editPaperInfo(paper, {
-      author: paperInfoModifyDialogForm.value.tags,
-    })
-      .then(() => {
-        paper.value.author = paperInfoModifyDialogForm.value.tags.slice(0);
-        showSuccessPrompt("作者修改成功");
+        .then(() => {
+          paper.value.year = paperInfoModifyDialogForm.value.date.getFullYear();
+          paper.value.month = paperInfoModifyDialogForm.value.date.getMonth() + 1;
+          paper.value.day = paperInfoModifyDialogForm.value.date.getDate();
+          showSuccessPrompt("来源修改成功");
+        })
+        .catch(err => showErrorPrompt("来源修改失败", err));
+      break;
+    case "author": // 更新作者
+      editPaperInfo(paper, {
+        author: paperInfoModifyDialogForm.value.tags,
       })
-      .catch(err => showErrorPrompt("作者修改失败", err));
-  }
-
-  // 更新关键词
-  if (paperInfoModifyKey.value === "keyword") {
-    editPaperInfo(paper, {
-      keyword: paperInfoModifyDialogForm.value.tags,
-    })
-      .then(() => {
-        paper.value.keyword = paperInfoModifyDialogForm.value.tags.slice(0);
-        showSuccessPrompt("关键词修改成功");
+        .then(() => {
+          paper.value.author = paperInfoModifyDialogForm.value.tags.slice(0);
+          showSuccessPrompt("作者修改成功");
+        })
+        .catch(err => showErrorPrompt("作者修改失败", err));
+      break;
+    case "keyword": // 更新关键词
+      editPaperInfo(paper, {
+        keyword: paperInfoModifyDialogForm.value.tags,
       })
-      .catch(err => showErrorPrompt("关键词修改失败", err));
+        .then(() => {
+          paper.value.keyword = paperInfoModifyDialogForm.value.tags.slice(0);
+          showSuccessPrompt("关键词修改成功");
+        })
+        .catch(err => showErrorPrompt("关键词修改失败", err));
+      break;
+    case "abstract": // 更新摘要
+      editPaperInfo(paper, {
+        abstract: paperInfoModifyDialogForm.value.abstract,
+      })
+        .then(() => {
+          paper.value.abstract = paperInfoModifyDialogForm.value.abstract;
+          showSuccessPrompt("摘要修改成功");
+        })
+        .catch(err => showErrorPrompt("摘要修改失败", err));
+      break;
+    default:
+      break;
   }
 
   paperInfoModifyDialogFormVisible.value = false;
