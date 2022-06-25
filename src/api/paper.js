@@ -122,13 +122,13 @@ export function uploadPaper(file, projectId) {
 export function createPaper(projectId, url) {
   return new Promise((resolve, reject) => {
     http
-        .post(`/projects/${projectId}/attachments/url?url=${url}`)
-        .then(res => {
-          resolve(res.data);
-        })
-        .catch(err => {
-          reject(err.response ? err.response.data.detail : err.message);
-        });
+      .post(`/projects/${projectId}/attachments/url?url=${url}`)
+      .then(res => {
+        resolve(res.data);
+      })
+      .catch(err => {
+        reject(err.response ? err.response.data.detail : err.message);
+      });
   });
 }
 

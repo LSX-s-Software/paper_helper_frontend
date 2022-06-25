@@ -74,25 +74,21 @@
                 </el-icon>
               </el-button>
               <!-- 添加按钮 -->
-              <el-button circle :type="edit ? 'default' : 'primary'" @click="dialogFormVisible = true">
+              <el-button circle :type="edit ? 'default' : 'primary'" @click="dialogFormVisible = true" v-if="!edit">
                 <el-icon><i-ep-plus /></el-icon>
               </el-button>
               <el-dialog
-                  v-model="dialogFormVisible"
-                  title="添加论文"
-                  width="33%"
-                  :show-close="!dialogLoading"
-                  :close-on-click-modal="!dialogLoading"
-                  :close-on-press-escape="!dialogLoading"
+                v-model="dialogFormVisible"
+                title="添加论文"
+                width="33%"
+                :show-close="!dialogLoading"
+                :close-on-click-modal="!dialogLoading"
+                :close-on-press-escape="!dialogLoading"
               >
                 <template #default>
                   <el-tabs class="tabs" stretch v-model="uploadDialogTab" v-loading="dialogLoading">
                     <el-tab-pane label="来自URL/DOI" name="url">
-                      <el-form
-                          ref="urlForm"
-                          :model="uploadPaperForm"
-                          label-width="60px"
-                      >
+                      <el-form ref="urlForm" :model="uploadPaperForm" label-width="60px">
                         <el-form-item label="URL" prop="url">
                           <el-input v-model="uploadPaperForm.url" placeholder="请输入URL或DOI" />
                         </el-form-item>
@@ -100,17 +96,15 @@
                     </el-tab-pane>
                     <el-tab-pane label="来自本地文件" name="file">
                       <el-upload
-                          class="upload-demo"
-                          drag
-                          v-if="!edit"
-                          accept=".pdf"
-                          :show-file-list="false"
-                          :http-request="handleFileUpload"
+                        class="upload-demo"
+                        drag
+                        v-if="!edit"
+                        accept=".pdf"
+                        :show-file-list="false"
+                        :http-request="handleFileUpload"
                       >
                         <el-icon class="el-icon--upload"><i-ep-uploadFilled /></el-icon>
-                        <div class="el-upload__text">
-                          拖拽到此处或<em>点击上传</em>
-                        </div>
+                        <div class="el-upload__text">拖拽到此处或<em>点击上传</em></div>
                       </el-upload>
                     </el-tab-pane>
                   </el-tabs>
@@ -326,7 +320,7 @@ import {
   transferProject,
 } from "@/api/project";
 import { formatTime } from "@/utils/util";
-import {createPaper, deletePaper, uploadPaper} from "@/api/paper";
+import { createPaper, deletePaper, uploadPaper } from "@/api/paper";
 import { showSuccessPrompt, showErrorPrompt } from "@/utils/MyPrompt";
 
 const isDark = useDark();
@@ -688,8 +682,7 @@ const dialogLoading = ref(false);
 const uploadDialogTab = ref("url");
 const uploadPaperForm = ref({
   url: "",
-  file: null,
-})
+});
 
 const handlePaperUrlCreate = projectId => {
   if (uploadPaperForm.value.url === "") {
@@ -698,20 +691,20 @@ const handlePaperUrlCreate = projectId => {
   }
   dialogLoading.value = true;
   createPaper(projectId, uploadPaperForm.value.url)
-      .then(res => {
+    .then(res => {
       let p = res;
       p.create_time = formatTime(p.create_time, "yyyy-MM-dd");
       p.read = false;
       paperList.value.push(p);
-      uploadPaperForm.value.url = "";
       showSuccessPrompt("论文创建成功");
+      dialogFormVisible.value = false;
+      uploadPaperForm.value.url = "";
     })
-      .catch(err => showErrorPrompt("论文识别失败", err))
-      .finally(() => {
-    dialogFormVisible.value = false;
-    dialogLoading.value = false;
-  });
-}
+    .catch(err => showErrorPrompt("论文识别失败", err))
+    .finally(() => {
+      dialogLoading.value = false;
+    });
+};
 
 // 上传论文
 const handleFileUpload = options => {
@@ -723,13 +716,15 @@ const handleFileUpload = options => {
       p.read = false;
       paperList.value.push(p);
       showSuccessPrompt("论文上传成功");
+      dialogFormVisible.value = false;
+      uploadPaperForm.value.url = "";
     })
     .catch(err => {
       showErrorPrompt("论文上传失败", err);
-    }).finally(() => {
-        dialogFormVisible.value = false;
-        dialogLoading.value = false;
-      });
+    })
+    .finally(() => {
+      dialogLoading.value = false;
+    });
 };
 
 // 编辑状态
@@ -743,6 +738,7 @@ const handleDeletePaper = () => {
       paperList.value.splice(index, 1);
     });
     showSuccessPrompt("删除成功");
+    edit.value = false;
   } catch (error) {
     showErrorPrompt("删除失败", error);
   }

@@ -22,7 +22,9 @@ function loadData() {
       async: false,
     },
     function (data) {
-      pdf.loadFromJSON(JSON.parse(data.content));
+      if (data.content) {
+        pdf.loadFromJSON(JSON.parse(data.content));
+      }
       myIframe.dispatchEvent(new Event('ready'));
     }
   );

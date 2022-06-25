@@ -69,7 +69,7 @@
               <div class="info-item">
                 <span>DOI</span>
                 <span
-                  >{{ paper.doi }}
+                  >{{ paper.doi || "未知" }}
                   <el-button text circle @click="handleEditPaperInfo('doi')">
                     <el-icon><i-ep-edit /></el-icon>
                   </el-button>
@@ -78,7 +78,7 @@
               <div class="info-item">
                 <span>来源</span>
                 <span
-                  >{{ paper.publication }} {{ paper.volume }} {{ paper.pages }}
+                  >{{ paper.publication || "未知" }} {{ paper.volume }} {{ paper.pages }}
                   <el-button text circle @click="handleEditPaperInfo('source')">
                     <el-icon><i-ep-edit /></el-icon>
                   </el-button>
@@ -87,7 +87,7 @@
               <div class="info-item">
                 <span>出版时间</span>
                 <span
-                  >{{ paper.year }} 年 {{ paper.month && paper.month + " 月" }}
+                  >{{ paper.year > 0 ? paper.year + " 年" : "未知" }} {{ paper.month > 0 ? paper.month + " 月" : "" }}
                   <el-button text circle @click="handleEditPaperInfo('pub_time')">
                     <el-icon><i-ep-edit /></el-icon>
                   </el-button>
