@@ -118,3 +118,40 @@ export function uploadPaper(file, projectId) {
       });
   });
 }
+
+/**
+ * 获取论文标注
+ * @param {String} paperId 论文id
+ * @returns 论文标注结果Promise
+ */
+export function getAnnotation(paperId) {
+  return new Promise((resolve, reject) => {
+    http
+      .get(`/papers/${paperId}/annotations`)
+      .then(res => {
+        resolve(res.data);
+      })
+      .catch(err => {
+        reject(err.response ? err.response.data.detail : err.message);
+      });
+  });
+}
+
+/**
+ * 保存标注
+ * @param {String} paperId 论文id
+ * @param {String} annotationString 标注字符串
+ * @returns 保存标注结果Promise
+ */
+export function saveAnnotation(paperId, annotationString) {
+  return new Promise((resolve, reject) => {
+    http
+      .put(`/papers/${paperId}/annotations`, { content: annotationString })
+      .then(res => {
+        resolve(res.data);
+      })
+      .catch(err => {
+        reject(err.response ? err.response.data.detail : err.message);
+      });
+  });
+}

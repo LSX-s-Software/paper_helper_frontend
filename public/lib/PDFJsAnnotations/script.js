@@ -1,15 +1,32 @@
-let url = window.parent.document.querySelector("#pdf").dataset.url;
-var pdf = new PDFAnnotate('pdf-container', url, {
+const myIframe = window.parent.document.querySelector('#pdf');
+
+var pdf = new PDFAnnotate('pdf-container', myIframe.dataset.url, {
   onPageUpdated(page, oldData, newData) {
-    console.log(page, oldData, newData);
+    // console.log(page, oldData, newData);
+    myIframe.dispatchEvent(new Event('pageUpdate'));
   },
   ready() {
-    console.log('Plugin initialized successfully');
-    pdf.loadFromJSON(sampleOutput);
+    loadData();
   },
   scale: 1.5,
   pageImageCompression: 'MEDIUM', // FAST, MEDIUM, SLOW(Helps to control the new PDF file size)
 });
+
+function loadData() {
+  $.get(
+    {
+      url: myIframe.dataset.annotationurl,
+      headers: {
+        Authorization: 'Bearer ' + localStorage.getItem('token'),
+      },
+      async: false,
+    },
+    function (data) {
+      pdf.loadFromJSON(JSON.parse(data.content));
+      myIframe.dispatchEvent(new Event('ready'));
+    }
+  );
+}
 
 function changeActiveTool(event) {
   var element = $(event.target).hasClass('tool-button')
@@ -17,6 +34,9 @@ function changeActiveTool(event) {
     : $(event.target).parents('.tool-button').first();
   $('.tool-button.active').removeClass('active');
   $(element).addClass('active');
+  $('#font-size-container').hide();
+  $('#brush-size-container').hide();
+  $('#color-container').hide();
 }
 
 function enableSelector(event) {
@@ -28,12 +48,16 @@ function enableSelector(event) {
 function enablePencil(event) {
   event.preventDefault();
   changeActiveTool(event);
+  $('#brush-size-container').show();
+  $('#color-container').show();
   pdf.enablePencil();
 }
 
 function enableAddText(event) {
   event.preventDefault();
   changeActiveTool(event);
+  $('#font-size-container').show();
+  $('#color-container').show();
   pdf.enableAddText();
 }
 
@@ -64,21 +88,22 @@ function deleteSelectedObject(event) {
 }
 
 function savePDF() {
-  // pdf.savePdf();
-  pdf.savePdf('output.pdf'); // save with given file name
+  myIframe.dispatchEvent(new Event('save'));
+}
+
+function downloadPDF() {
+  pdf.savePdf('output.pdf');
 }
 
 function clearPage() {
   pdf.clearActivePage();
 }
 
-function showPdfData() {
-  pdf.serializePdf(function (string) {
-    $('#dataModal .modal-body pre')
-      .first()
-      .text(JSON.stringify(JSON.parse(string), null, 4));
-    PR.prettyPrint();
-    $('#dataModal').modal('show');
+function getPDFData() {
+  return new Promise((resolve) => {
+    pdf.serializePdf((string) => {
+      resolve(string);
+    });
   });
 }
 

@@ -23,7 +23,7 @@
     >
       <div class="reader">
         <div class="mask" v-if="mousedown"></div>
-        <PDFReader :url="paper && paper.attachment.url"></PDFReader>
+        <PDFReader :url="paper && paper.attachment.url" :paper-id="paper && paper.id"></PDFReader>
       </div>
       <div class="separator" v-if="rightWidth > 0">
         <div class="handle"></div>
@@ -44,7 +44,7 @@
               </div>
               <div class="info-item">
                 <span>标签</span>
-                <div class="tag-contianer">
+                <div class="tag-container">
                   <el-tag
                     v-for="item in paper.tag"
                     :key="item.id"
@@ -164,7 +164,7 @@
       @submit.prevent
     >
       <el-form-item label="作者" label-width="80px">
-        <div class="tag-contianer">
+        <div class="tag-container">
           <el-tag
             v-for="tag in paperInfoModifyDialogForm.tags"
             :key="tag"
@@ -606,7 +606,7 @@ const handleInputConfirm = () => {
   }
 }
 
-:deep(.tag-contianer) {
+:deep(.tag-container) {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;

@@ -6,7 +6,7 @@
       <h2>文献助手</h2>
       <h3>赋能新时代研究课题组合作</h3>
     </div>
-    <div class="login-contianer">
+    <div class="login-container">
       <h2>{{ reg ? "注册" : "登录" }}</h2>
       <el-form
         class="login-form"
@@ -216,7 +216,7 @@ const handleAction = () => {
     }
   }
 
-  .login-contianer {
+  .login-container {
     position: fixed;
     padding: 32px;
     right: 10%;

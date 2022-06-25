@@ -16,6 +16,8 @@ canvas, .canvas-container {
     top: 0;
     left: 0;
     z-index: 10;
+    white-space: nowrap;
+    overflow-x: auto;
 }
 
 #pdf-container {
