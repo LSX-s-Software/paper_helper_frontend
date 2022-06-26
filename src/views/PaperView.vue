@@ -452,7 +452,6 @@ const handleClose = tag => {
 
 const showInput = () => {
   paperInfoModifyDialogForm.value.tagInputVisible = true;
-  console.log(paperInfoModifyDialogForm.value.tagInputVisible.value);
 };
 
 const handleInputConfirm = () => {

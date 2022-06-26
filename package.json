@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "serve": "vite",
+    "serve": "vite --host",
     "build": "vite build",
     "lint": "eslint src/**/*.{js,vue} --fix",
     "format": "prettier --write 'src/**/*.{js,vue}'"
