@@ -19,7 +19,7 @@ import mindmap from "vue3-mindmap";
 import "vue3-mindmap/dist/style.css";
 import * as ShareDB from "sharedb/lib/client";
 import * as otJson1 from "ot-json1";
-import * as jsondiff from "json0-ot-diff";
+import jsondiff from "json0-ot-diff";
 import * as diffMatchPatch from "diff-match-patch";
 import * as textUnicode from "ot-text-unicode";
 import { ElMessage } from "element-plus";

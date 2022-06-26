@@ -11,10 +11,12 @@
 </template>
 
 <script>
+// eslint-disable-next-line no-unused-vars
+import Quill from "quill";
 import { quillEditor } from "vue3-quill";
 import * as ShareDB from "sharedb/lib/client";
 import * as otJson1 from "ot-json1";
-import * as jsondiff from "json0-ot-diff";
+import jsondiff from "json0-ot-diff";
 import * as diffMatchPatch from "diff-match-patch";
 import * as textUnicode from "ot-text-unicode";
 import { ElMessage } from "element-plus";
