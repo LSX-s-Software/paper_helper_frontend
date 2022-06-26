@@ -143,7 +143,7 @@ const handleAction = () => {
             router.replace("/home/dashboard");
           })
           .catch(err => {
-            ElMessageBox.alert(err.message, "注册失败", {
+            ElMessageBox.alert(err, "注册失败", {
               type: "error",
             });
           })
@@ -164,7 +164,7 @@ const handleAction = () => {
         router.replace("/home/dashboard");
       })
       .catch(err => {
-        ElMessageBox.alert(err.message, "登录失败", {
+        ElMessageBox.alert(err, "登录失败", {
           type: "error",
         });
       })

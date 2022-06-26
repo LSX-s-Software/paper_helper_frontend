@@ -23,11 +23,11 @@ export function login(username, password) {
           user.info = res.data;
           resolve();
         } else {
-          throw { message: res.data.message };
+          reject(res.data ? res.data.detail : res.message);
         }
       })
       .catch(err => {
-        reject(err);
+        reject(err.response ? err.response.data.detail : err.message);
       });
   });
 }
@@ -54,11 +54,11 @@ export function register(username, password, confirmPassword, phone) {
           localStorage.setItem("token", res.data.token);
           resolve();
         } else {
-          throw { message: res.data.message };
+          reject(res.data ? res.data.detail : res.message);
         }
       })
       .catch(err => {
-        reject(err);
+        reject(err.response ? err.response.data.detail : err.message);
       });
   });
 }
